@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76d23535c38f5e541b138a0adb233660, type: 3}
+  m_Name: ScoreMultiplier
+  m_EditorClassIdentifier: 
+  upgradeName: Score Multiplier
+  description: All pellets are now worth double points. Requires fruit currency to
+    unlock.
+  icon: {fileID: 0}
+  costType: 1
+  cost: 3
+  upgradeType: 5
+  upgradeValue: 1
