@@ -3,29 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 
-/// <summary>
-/// UpgradeScreenManager - Shows one upgrade card at a time.
-/// Player cycles through with arrows and picks one.
-///
-/// SCENE SETUP:
-/// Canvas
-/// ├── Background
-/// ├── TitleText
-/// ├── LevelText
-/// ├── PointsText
-/// ├── FruitCurrencyGroup
-/// │   └── FruitCurrencyText
-/// ├── CardPanel          (the single visible card)
-/// │   ├── NameText
-/// │   ├── DescriptionText
-/// │   ├── CostText
-/// │   └── CurrencyText
-/// ├── LeftArrowButton    (< arrow)
-/// ├── RightArrowButton   (> arrow)
-/// ├── SelectButton       (PICK THIS)
-/// ├── CantAffordText     (hidden by default)
-/// └── ContinueButton     (skip upgrade)
-/// </summary>
 public class UpgradeScreenManager : MonoBehaviour
 {
     [Header("Header UI")]
@@ -36,6 +13,7 @@ public class UpgradeScreenManager : MonoBehaviour
     public TextMeshProUGUI fruitCurrencyText;
 
     [Header("Card Display")]
+    public Image iconImage;
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI descriptionText;
     public TextMeshProUGUI costText;
@@ -43,27 +21,49 @@ public class UpgradeScreenManager : MonoBehaviour
     public Image cardBackground;
     public Color affordableColor = new Color(0.1f, 0.1f, 0.24f, 1f);
     public Color lockedColor = new Color(0.15f, 0.05f, 0.05f, 1f);
+    public Color purchasedColor = new Color(0.05f, 0.2f, 0.05f, 1f);
 
     [Header("Navigation")]
     public Button leftArrowButton;
     public Button rightArrowButton;
-    public TextMeshProUGUI pageIndicatorText; // shows "2 / 3"
+    public TextMeshProUGUI pageIndicatorText;
 
     [Header("Action Buttons")]
     public Button selectButton;
-    public TextMeshProUGUI cantAffordText;  // "NOT ENOUGH POINTS" hidden by default
-    public Button continueButton;
+    public TextMeshProUGUI cantAffordText;
+    public TextMeshProUGUI alreadyPurchasedText;
+    public Button backButton;
+
+    [Header("Upgrade Icons - assign one per upgrade type")]
+    public Sprite iconTimerBonus;
+    public Sprite iconExtraLife;
+    public Sprite iconMoveSpeed;
+    public Sprite iconPowerDuration;
+    public Sprite iconUnlockFruit;
+    public Sprite iconScoreMultiplier;
+    public Sprite iconExtraPowerPellets;
+    public Sprite iconGhostFreeze;
+    public Sprite iconDefault;
 
     [Header("All Possible Upgrades")]
     public List<UpgradeData> allUpgrades;
 
-    // Runtime
     private List<UpgradeData> offeredUpgrades = new List<UpgradeData>();
     private int currentIndex = 0;
+    private HashSet<int> purchasedIndexes = new HashSet<int>();
 
     private void Start()
     {
+        if (PlayerUpgrades.Instance == null)
+        {
+            GameObject temp = new GameObject("TempPlayerUpgrades");
+            temp.AddComponent<PlayerUpgrades>();
+        }
+
+        PlayerUpgrades.Instance.AddPoints(500);
+
         cantAffordText?.gameObject.SetActive(false);
+        alreadyPurchasedText?.gameObject.SetActive(false);
 
         RefreshCurrencyDisplay();
         PickRandomUpgrades();
@@ -78,16 +78,16 @@ public class UpgradeScreenManager : MonoBehaviour
         bool fruitUnlocked = PlayerUpgrades.Instance?.FruitUnlocked ?? false;
         fruitCurrencyGroup?.SetActive(fruitUnlocked);
 
-        // Wire buttons
         leftArrowButton?.onClick.AddListener(GoLeft);
         rightArrowButton?.onClick.AddListener(GoRight);
         selectButton?.onClick.AddListener(SelectCurrent);
-        continueButton?.onClick.AddListener(() => GameManager.Instance?.OnUpgradesApplied());
+        backButton?.onClick.AddListener(() => UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu"));
     }
 
     private void PickRandomUpgrades()
     {
         offeredUpgrades.Clear();
+        purchasedIndexes.Clear();
         List<UpgradeData> pool = new List<UpgradeData>(allUpgrades);
         int count = Mathf.Min(3, pool.Count);
 
@@ -107,34 +107,60 @@ public class UpgradeScreenManager : MonoBehaviour
 
         UpgradeData upgrade = offeredUpgrades[currentIndex];
         bool canAfford = PlayerUpgrades.Instance?.CanAfford(upgrade) ?? true;
+        bool alreadyBought = purchasedIndexes.Contains(currentIndex);
 
-        // Fill card text
         if (nameText != null)        nameText.text = upgrade.upgradeName.ToUpper();
         if (descriptionText != null) descriptionText.text = upgrade.description;
         if (costText != null)        costText.text = upgrade.cost.ToString();
         if (currencyText != null)    currencyText.text = upgrade.costType == CurrencyType.Points ? "POINTS" : "FRUIT";
 
-        // Card color shows affordability
-        if (cardBackground != null)
-            cardBackground.color = canAfford ? affordableColor : lockedColor;
+        // Set icon based on upgrade type
+        if (iconImage != null)
+        {
+            iconImage.sprite = GetIconForUpgrade(upgrade.upgradeType);
+            iconImage.gameObject.SetActive(iconImage.sprite != null);
+        }
 
-        // Page indicator e.g. "2 / 3"
+        // Card color
+        if (cardBackground != null)
+        {
+            if (alreadyBought)   cardBackground.color = purchasedColor;
+            else if (!canAfford) cardBackground.color = lockedColor;
+            else                 cardBackground.color = affordableColor;
+        }
+
         if (pageIndicatorText != null)
             pageIndicatorText.text = (currentIndex + 1) + " / " + offeredUpgrades.Count;
 
-        // Hide/show cant afford text
-        cantAffordText?.gameObject.SetActive(!canAfford);
+        cantAffordText?.gameObject.SetActive(false);
+        alreadyPurchasedText?.gameObject.SetActive(false);
 
-        // Hide arrows if only one upgrade
+        if (selectButton != null) selectButton.interactable = !alreadyBought;
+
         leftArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
         rightArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
+    }
+
+    private Sprite GetIconForUpgrade(UpgradeType type)
+    {
+        switch (type)
+        {
+            case UpgradeType.TimerBonus:          return iconTimerBonus       != null ? iconTimerBonus       : iconDefault;
+            case UpgradeType.ExtraLife:           return iconExtraLife        != null ? iconExtraLife        : iconDefault;
+            case UpgradeType.MoveSpeedBonus:      return iconMoveSpeed        != null ? iconMoveSpeed        : iconDefault;
+            case UpgradeType.PowerPelletDuration: return iconPowerDuration    != null ? iconPowerDuration    : iconDefault;
+            case UpgradeType.UnlockFruit:         return iconUnlockFruit      != null ? iconUnlockFruit      : iconDefault;
+            case UpgradeType.ScoreMultiplier:     return iconScoreMultiplier  != null ? iconScoreMultiplier  : iconDefault;
+            case UpgradeType.ExtraPowerPellets:   return iconExtraPowerPellets!= null ? iconExtraPowerPellets: iconDefault;
+            case UpgradeType.GhostFreeze:         return iconGhostFreeze      != null ? iconGhostFreeze      : iconDefault;
+            default:                              return iconDefault;
+        }
     }
 
     private void GoLeft()
     {
         currentIndex--;
         if (currentIndex < 0) currentIndex = offeredUpgrades.Count - 1;
-        cantAffordText?.gameObject.SetActive(false);
         DisplayCurrentCard();
     }
 
@@ -142,13 +168,18 @@ public class UpgradeScreenManager : MonoBehaviour
     {
         currentIndex++;
         if (currentIndex >= offeredUpgrades.Count) currentIndex = 0;
-        cantAffordText?.gameObject.SetActive(false);
         DisplayCurrentCard();
     }
 
     private void SelectCurrent()
     {
         if (offeredUpgrades.Count == 0) return;
+
+        if (purchasedIndexes.Contains(currentIndex))
+        {
+            alreadyPurchasedText?.gameObject.SetActive(true);
+            return;
+        }
 
         UpgradeData upgrade = offeredUpgrades[currentIndex];
 
@@ -159,13 +190,16 @@ public class UpgradeScreenManager : MonoBehaviour
         }
 
         PlayerUpgrades.Instance?.ApplyUpgrade(upgrade);
-        GameManager.Instance?.OnUpgradesApplied();
+        purchasedIndexes.Add(currentIndex);
+
+        RefreshCurrencyDisplay();
+        DisplayCurrentCard();
     }
 
     private void RefreshCurrencyDisplay()
     {
         if (PlayerUpgrades.Instance == null) return;
-        if (pointsText != null)      pointsText.text = "POINTS: " + PlayerUpgrades.Instance.Points;
+        if (pointsText != null)        pointsText.text = "POINTS: " + PlayerUpgrades.Instance.Points;
         if (fruitCurrencyText != null) fruitCurrencyText.text = "FRUIT: " + PlayerUpgrades.Instance.FruitCurrency;
     }
 }
