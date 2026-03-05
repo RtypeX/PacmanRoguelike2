@@ -139,6 +139,9 @@ public class UpgradeScreenManager : MonoBehaviour
 
         leftArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
         rightArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
+
+        cardBackground.transform.localScale = Vector3.one;
+        LeanTween.scale(cardBackground.gameObject, Vector3.one * 1.05f, 0.1f);
     }
 
     private Sprite GetIconForUpgrade(UpgradeType type)
