@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-
 /// <summary>
 /// PacmanController - Handles player movement, input, collisions, and state.
 /// Attach to the Pacman GameObject. Requires a Rigidbody2D and Collider2D.
