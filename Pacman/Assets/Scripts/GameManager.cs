@@ -6,6 +6,10 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+
+    [Header("Testing")]
+    public int testStartLevel = 1;
+
     [Header("Game Settings")]
     public float startingTimerDuration = 10f;
     public int startingLives = 3;
@@ -24,6 +28,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        CurrentLevel = testStartLevel;
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
