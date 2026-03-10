@@ -9,6 +9,8 @@ public class GameManager : MonoBehaviour
 
     [Header("Testing")]
     public int testStartLevel = 1;
+    public int testStartPoints = 0;
+    public int testStartFruit = 0;
 
     [Header("Game Settings")]
     public float startingTimerDuration = 10f;
@@ -32,6 +34,15 @@ public class GameManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        CurrentLevel = testStartLevel;
+
+        // Add test currencies after a frame so PlayerUpgrades has time to initialize
+        if (testStartPoints > 0 || testStartFruit > 0)
+            StartCoroutine(AddTestCurrencies());
     }
 
     private void OnEnable() { PacmanController.OnPlayerDied += HandlePlayerDied; }
@@ -96,6 +107,18 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene(gameSceneName);
         SceneManager.sceneLoaded += OnGameSceneLoaded;
+    }
+
+    private IEnumerator AddTestCurrencies()
+    {
+        // Wait for PlayerUpgrades to be ready
+        yield return new WaitUntil(() => PlayerUpgrades.Instance != null);
+
+        if (testStartPoints > 0)
+            PlayerUpgrades.Instance.AddPoints(testStartPoints);
+
+        if (testStartFruit > 0)
+            PlayerUpgrades.Instance.AddFruitCurrency(testStartFruit);
     }
 
     public void UpgradeTimerDuration(float bonus) => CurrentTimerDuration += bonus;

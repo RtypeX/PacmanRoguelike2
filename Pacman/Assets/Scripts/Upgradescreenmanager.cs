@@ -23,12 +23,6 @@ public class UpgradeScreenManager : MonoBehaviour
     public Color affordableColor = new Color(0.1f, 0.1f, 0.24f, 1f);
     public Color lockedColor = new Color(0.15f, 0.05f, 0.05f, 1f);
     public Color purchasedColor = new Color(0.05f, 0.2f, 0.05f, 1f);
-    public Color greyedOutColor = new Color(0.2f, 0.2f, 0.2f, 1f);
-
-    [Header("Lock System")]
-    public GameObject lockOverlay;
-    public Image lockIcon;
-    public TextMeshProUGUI playFirstNotification;
 
     [Header("Navigation")]
     public Button leftArrowButton;
@@ -62,12 +56,9 @@ public class UpgradeScreenManager : MonoBehaviour
     private List<UpgradeData> offeredUpgrades = new List<UpgradeData>();
     private int currentIndex = 0;
     private HashSet<int> purchasedIndexes = new HashSet<int>();
-    private bool hasPlayedLevel = false;
 
     private void Start()
     {
-        hasPlayedLevel = GameManager.Instance == null || GameManager.Instance.CurrentLevel > 1;
-
         if (PlayerUpgrades.Instance == null)
         {
             GameObject temp = new GameObject("TempPlayerUpgrades");
@@ -76,10 +67,7 @@ public class UpgradeScreenManager : MonoBehaviour
 
         cantAffordText?.gameObject.SetActive(false);
         alreadyPurchasedText?.gameObject.SetActive(false);
-        playFirstNotification?.gameObject.SetActive(false);
-        lockOverlay?.SetActive(!hasPlayedLevel);
 
-        RefreshCurrencyDisplay();
         PickRandomUpgrades();
         DisplayCurrentCard();
 
@@ -89,21 +77,24 @@ public class UpgradeScreenManager : MonoBehaviour
             levelText.text = level > 0 ? "LEVEL " + level + " COMPLETE" : "NO LEVEL COMPLETED YET";
         }
 
-        bool fruitUnlocked = PlayerUpgrades.Instance?.FruitUnlocked ?? false;
-        fruitCurrencyGroup?.SetActive(fruitUnlocked);
-
         leftArrowButton?.onClick.AddListener(GoLeft);
         rightArrowButton?.onClick.AddListener(GoRight);
         selectButton?.onClick.AddListener(SelectCurrent);
         backButton?.onClick.AddListener(() => UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu"));
 
-        // Pulse upgrades button hint if locked
-        if (!hasPlayedLevel && lockOverlay != null)
-        {
-            LeanTween.scale(lockOverlay, Vector3.one * 1.05f, 0.6f)
-                .setEaseInOutSine()
-                .setLoopPingPong();
-        }
+        // Wait a frame for GameManager to finish adding test currencies
+        StartCoroutine(DelayedRefresh());
+    }
+
+    private IEnumerator DelayedRefresh()
+    {
+        yield return new WaitForEndOfFrame();
+
+        RefreshCurrencyDisplay();
+
+        bool fruitUnlocked = PlayerUpgrades.Instance?.FruitUnlocked ?? false;
+        bool hasFruitFromTest = GameManager.Instance != null && GameManager.Instance.testStartFruit > 0;
+        fruitCurrencyGroup?.SetActive(fruitUnlocked || hasFruitFromTest);
     }
 
     private void PickRandomUpgrades()
@@ -144,8 +135,7 @@ public class UpgradeScreenManager : MonoBehaviour
 
         if (cardBackground != null)
         {
-            if (!hasPlayedLevel) cardBackground.color = greyedOutColor;
-            else if (alreadyBought) cardBackground.color = purchasedColor;
+            if (alreadyBought) cardBackground.color = purchasedColor;
             else if (!canAfford) cardBackground.color = lockedColor;
             else cardBackground.color = affordableColor;
         }
@@ -157,7 +147,7 @@ public class UpgradeScreenManager : MonoBehaviour
         alreadyPurchasedText?.gameObject.SetActive(false);
 
         if (selectButton != null)
-            selectButton.interactable = hasPlayedLevel && !alreadyBought;
+            selectButton.interactable = !alreadyBought;
 
         leftArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
         rightArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
@@ -214,12 +204,6 @@ public class UpgradeScreenManager : MonoBehaviour
     {
         if (offeredUpgrades.Count == 0) return;
 
-        if (!hasPlayedLevel)
-        {
-            StartCoroutine(ShowPlayFirstNotification());
-            return;
-        }
-
         if (purchasedIndexes.Contains(currentIndex))
         {
             alreadyPurchasedText?.gameObject.SetActive(true);
@@ -239,39 +223,6 @@ public class UpgradeScreenManager : MonoBehaviour
 
         RefreshCurrencyDisplay();
         DisplayCurrentCard();
-    }
-
-    private IEnumerator ShowPlayFirstNotification()
-    {
-        if (playFirstNotification == null) yield break;
-
-        playFirstNotification.gameObject.SetActive(true);
-        Color c = playFirstNotification.color;
-
-        // Fade in
-        float elapsed = 0f;
-        while (elapsed < 0.3f)
-        {
-            elapsed += Time.deltaTime;
-            c.a = Mathf.Lerp(0f, 1f, elapsed / 0.3f);
-            playFirstNotification.color = c;
-            yield return null;
-        }
-
-        // Hold
-        yield return new WaitForSeconds(1.5f);
-
-        // Fade out
-        elapsed = 0f;
-        while (elapsed < 0.5f)
-        {
-            elapsed += Time.deltaTime;
-            c.a = Mathf.Lerp(1f, 0f, elapsed / 0.5f);
-            playFirstNotification.color = c;
-            yield return null;
-        }
-
-        playFirstNotification.gameObject.SetActive(false);
     }
 
     private void RefreshCurrencyDisplay()

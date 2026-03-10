@@ -851,6 +851,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testStartLevel: 2
+  testStartPoints: 1000
+  testStartFruit: 10
   startingTimerDuration: 10
   startingLives: 3
   gameSceneName: GameScene
