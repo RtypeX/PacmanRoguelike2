@@ -926,7 +926,7 @@ GameObject:
   - component: {fileID: 422851216}
   - component: {fileID: 422851215}
   m_Layer: 5
-  m_Name: Points
+  m_Name: PointsText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -948,8 +948,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -455.82, y: 245.99084}
-  m_SizeDelta: {x: 189.37, y: 22.0183}
+  m_AnchoredPosition: {x: -430.28076, y: 245.99084}
+  m_SizeDelta: {x: 240.4485, y: 22.0183}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &422851215
 MonoBehaviour:
@@ -1851,6 +1851,10 @@ MonoBehaviour:
   affordableColor: {r: 0.1, g: 0.1, b: 0.24, a: 1}
   lockedColor: {r: 0.15, g: 0.05, b: 0.05, a: 1}
   purchasedColor: {r: 0.05, g: 0.2, b: 0.05, a: 1}
+  greyedOutColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+  lockOverlay: {fileID: 0}
+  lockIcon: {fileID: 0}
+  playFirstNotification: {fileID: 0}
   leftArrowButton: {fileID: 1131305270}
   rightArrowButton: {fileID: 498422202}
   pageIndicatorText: {fileID: 558605102}
@@ -1867,6 +1871,8 @@ MonoBehaviour:
   iconExtraPowerPellets: {fileID: 1909295488, guid: 3c2fd71f2b55338458ff266b2c1c0454, type: 3}
   iconGhostFreeze: {fileID: 1115365052, guid: 3c2fd71f2b55338458ff266b2c1c0454, type: 3}
   iconDefault: {fileID: 110587323, guid: 3c2fd71f2b55338458ff266b2c1c0454, type: 3}
+  slideDistance: 800
+  slideDuration: 0.15
   allUpgrades:
   - {fileID: 11400000, guid: 87b59debe0818074abf39f0121766306, type: 2}
   - {fileID: 11400000, guid: e5521d33c5e5b384d82a0b8b9f05f048, type: 2}
