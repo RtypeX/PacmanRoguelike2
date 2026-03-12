@@ -3760,7 +3760,7 @@ GameObject:
   - component: {fileID: 523808153}
   m_Layer: 0
   m_Name: PelletManager
-  m_TagString: Untagged
+  m_TagString: Pellet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3795,12 +3795,16 @@ MonoBehaviour:
   mapTilemap: {fileID: 1402134136}
   wallsTilemap: {fileID: 32919693}
   pelletPrefab: {fileID: 4936874379799335612, guid: 2b8d83766ed681d4eb8e7b166aa9497c, type: 3}
+  powerPelletPrefab: {fileID: 2845381662289636116, guid: 04d744db389a70541a9064ae9b053647, type: 3}
   pelletParent: {fileID: 1349851107}
   generateOnStart: 1
   pacmanSpawnCell: {x: 0, y: 0}
   skipGhostHouse: 1
   ghostHouseMin: {x: -10, y: -2}
   ghostHouseMax: {x: 1, y: 2}
+  useRandomPowerPellets: 1
+  powerPelletCount: 4
+  minPowerPelletDistanceFromSpawn: 6
 --- !u!1 &825091225
 GameObject:
   m_ObjectHideFlags: 0
