@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
     public int startingLives = 3;
 
     [Header("Scene Names")]
-    public string gameSceneName = "GameScene";
+    public string gameSceneName = "Level 0";
     public string upgradeSceneName = "UpgradeScene";
 
     public int CurrentLevel { get; private set; } = 1;
