@@ -23,6 +23,7 @@ public class MainMenuAnimations : MonoBehaviour
     public float titlePulseMin = 0.95f;
     public float titlePulseMax = 1.05f;
     public float titlePulseSpeed = 1.5f;
+    private bool slideComplete = false;
 
     [Header("Buttons - assign in order")]
     public List<Button> menuButtons;
@@ -31,6 +32,11 @@ public class MainMenuAnimations : MonoBehaviour
     public float slideInStagger = 0.1f;
     public float hoverScale = 1.08f;
     public float hoverDuration = 0.15f;
+    private GameObject slideBlocker;
+
+    [Header("Canvas")]
+    public Canvas parentCanvas;
+
 
     private List<Vector2> originalPositions = new List<Vector2>();
 
@@ -62,31 +68,55 @@ public class MainMenuAnimations : MonoBehaviour
 
     private IEnumerator SlideButtonsIn()
     {
-        // Store original positions and move buttons off screen to the left
+
+        // Create invisible blocker over entire canvas to eat all hover events
+        slideBlocker = new GameObject("SlideBlocker");
+        slideBlocker.transform.SetParent(parentCanvas.transform, false);
+        Image blockerImage = slideBlocker.AddComponent<Image>();
+        blockerImage.color = new Color(0, 0, 0, 0); // fully transparent
+        RectTransform blockerRT = slideBlocker.GetComponent<RectTransform>();
+        blockerRT.anchorMin = Vector2.zero;
+        blockerRT.anchorMax = Vector2.one;
+        blockerRT.offsetMin = Vector2.zero;
+        blockerRT.offsetMax = Vector2.zero;
+
+        // Disable all buttons during slide
         foreach (var btn in menuButtons)
         {
             if (btn == null) continue;
+            btn.interactable = false;
             RectTransform rt = btn.GetComponent<RectTransform>();
             originalPositions.Add(rt.anchoredPosition);
             rt.anchoredPosition = new Vector2(-slideInDistance, rt.anchoredPosition.y);
             btn.gameObject.SetActive(true);
         }
 
-        // Slide each button in with stagger
         for (int i = 0; i < menuButtons.Count; i++)
         {
             if (menuButtons[i] == null) continue;
             RectTransform rt = menuButtons[i].GetComponent<RectTransform>();
             Vector2 target = originalPositions[i];
+            Button btn = menuButtons[i];
 
             LeanTween.value(menuButtons[i].gameObject,
                 (float val) => rt.anchoredPosition = new Vector2(val, rt.anchoredPosition.y),
                 -slideInDistance, target.x, slideInDuration)
                 .setEaseOutCubic()
-                .setDelay(i * slideInStagger);
+                .setDelay(i * slideInStagger)
+                .setOnComplete(() =>
+                {
+                    // Re-enable this button the moment it reaches its position
+                    btn.interactable = true;
+                });
 
             yield return new WaitForSeconds(slideInStagger);
         }
+
+        float totalDuration = slideInDuration + (menuButtons.Count - 1) * slideInStagger;
+        yield return new WaitForSeconds(totalDuration);
+        slideComplete = true;
+        Destroy(slideBlocker);
+
     }
 
     // ---- Button Hover -------------------------------------------------------
