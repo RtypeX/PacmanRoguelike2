@@ -3989,6 +3989,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 5
+  useDynamicRotation: 1
   maxLives: 3
   tileSize: 1
   wallLayer:
