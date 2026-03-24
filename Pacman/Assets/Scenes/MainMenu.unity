@@ -907,7 +907,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6eaa5cb12629d3488e9562f571578d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testStartLevel: 0
+  testStartLevel: 2
   testStartPoints: 1000
   testStartFruit: 10
   startingTimerDuration: 10
@@ -1662,6 +1662,6 @@ SceneRoots:
   - {fileID: 2129608987}
   - {fileID: 797669056}
   - {fileID: 589464690}
-  - {fileID: 1847990962}
   - {fileID: 1250725075}
   - {fileID: 1223917694}
+  - {fileID: 1847990962}
