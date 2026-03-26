@@ -64,6 +64,7 @@ public class testMove : MonoBehaviour
     public static event System.Action OnPowerUpStart;
     public static event System.Action OnPowerUpEnd;
 
+
     // ─── Unity Lifecycle ──────────────────────────────────────────────────
 
     private void Awake()
@@ -241,11 +242,29 @@ public class testMove : MonoBehaviour
 
     // ─── Animation ────────────────────────────────────────────────────────
 
+    // Add this at the top with your other hashes
+    private static readonly int AnimIsMoving = Animator.StringToHash("IsMoving");
+
     private void UpdateAnimation()
     {
-        animator.SetFloat(AnimDirX, currentDirection.x);
-        animator.SetFloat(AnimDirY, currentDirection.y);
+        // Check if we have any movement intent
+        bool isMoving = currentDirection != Vector2.zero;
+
+        // 1. Only update direction if moving (keeps Pacman facing the wall)
+        if (isMoving)
+        {
+            animator.SetFloat(AnimDirX, currentDirection.x);
+            animator.SetFloat(AnimDirY, currentDirection.y);
+        }
+
+        // 2. Tell the animator if we are moving or not
+        animator.SetBool(AnimIsMoving, isMoving);
+
+        // 3. Update power state
         animator.SetBool(AnimPowered, IsPoweredUp);
+
+        // 4. Force freeze/unfreeze
+        animator.speed = isMoving ? 1f : 0f;
     }
 
     // ─── Collision Detection ──────────────────────────────────────────────
