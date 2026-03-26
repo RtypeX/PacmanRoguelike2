@@ -66,20 +66,23 @@ public class SettingsManager : MonoBehaviour
 
     private void Start()
     {
-        // Make sure confirm panel is hidden on start
-        if (confirmResetPanel != null)
-            confirmResetPanel.SetActive(false);
-
+        // INITIALIZE PANELS
         panels.Add(audioPanel);
         panels.Add(displayPanel);
         panels.Add(keybindingsPanel);
         panels.Add(resetPanel);
 
+        // FORCE HIDE CONFIRMATION BOX
+        if (confirmResetPanel != null)
+            confirmResetPanel.SetActive(false);
+
+        // SETUP SYSTEMS
         LoadAudioSettings();
         SetupResolutionDropdown();
         SetupKeybindingsDisplay();
         WireButtons();
 
+        // SHOW FIRST CARD
         ShowCard(0, false);
     }
 
@@ -92,10 +95,24 @@ public class SettingsManager : MonoBehaviour
         int previousCard = currentCard;
         currentCard = index;
 
+        // Hide all cards
         foreach (var panel in panels)
-            panel?.SetActive(false);
+            if (panel != null) panel.SetActive(false);
 
-        panels[currentCard]?.SetActive(true);
+        // Show current card
+        if (panels[currentCard] != null)
+        {
+            panels[currentCard].SetActive(true);
+
+            // --- ADD THIS FIX HERE ---
+            // If we are on the ResetCard (index 3), 
+            // make sure the popup is hidden and the button is visible
+            if (currentCard == 3 && confirmResetPanel != null)
+            {
+                confirmResetPanel.SetActive(false);
+                resetProgressButton.gameObject.SetActive(true);
+            }
+        }
 
         if (cardTitleText != null)
             cardTitleText.text = cardTitles[currentCard];
@@ -110,7 +127,6 @@ public class SettingsManager : MonoBehaviour
     private IEnumerator SlideCard(int direction)
     {
         isAnimating = true;
-
         Vector2 startPos = new Vector2(slideDistance * direction, 0f);
         Vector2 endPos = Vector2.zero;
 
@@ -129,23 +145,10 @@ public class SettingsManager : MonoBehaviour
         isAnimating = false;
     }
 
-    private void GoLeft()
-    {
-        if (isAnimating) return;
-        int index = currentCard - 1;
-        if (index < 0) index = panels.Count - 1;
-        ShowCard(index);
-    }
+    private void GoLeft() { if (!isAnimating) ShowCard(currentCard - 1 < 0 ? panels.Count - 1 : currentCard - 1); }
+    private void GoRight() { if (!isAnimating) ShowCard((currentCard + 1) % panels.Count); }
 
-    private void GoRight()
-    {
-        if (isAnimating) return;
-        int index = currentCard + 1;
-        if (index >= panels.Count) index = 0;
-        ShowCard(index);
-    }
-
-    // ---- Audio --------------------------------------------------------------
+    // ---- Audio Logic --------------------------------------------------------
 
     private void LoadAudioSettings()
     {
@@ -169,69 +172,55 @@ public class SettingsManager : MonoBehaviour
     private void ApplyVolume(string key, float value)
     {
         if (audioMixer == null) return;
-        float db = value > 0.001f ? Mathf.Log10(value) * 20f : -80f;
+        float db = value > 0.0001f ? Mathf.Log10(value) * 20f : -80f;
         audioMixer.SetFloat(key, db);
     }
 
-    // ---- Display ------------------------------------------------------------
+    // ---- Display Logic ------------------------------------------------------
 
     private void SetupResolutionDropdown()
     {
         if (resolutionDropdown == null) return;
-
         resolutions = Screen.resolutions;
         resolutionDropdown.ClearOptions();
 
-        int currentIndex = 0;
-        int savedIndex = PlayerPrefs.GetInt(RESOLUTION, 0);
-        var options = new List<string>();
+        List<string> options = new List<string>();
+        int currentResIndex = 0;
 
         for (int i = 0; i < resolutions.Length; i++)
         {
             options.Add(resolutions[i].width + " x " + resolutions[i].height);
-            if (resolutions[i].width == Screen.currentResolution.width &&
-                resolutions[i].height == Screen.currentResolution.height)
-                currentIndex = i;
+            if (resolutions[i].width == Screen.width && resolutions[i].height == Screen.height)
+                currentResIndex = i;
         }
 
         resolutionDropdown.AddOptions(options);
-        resolutionDropdown.value = savedIndex > 0 ? savedIndex : currentIndex;
+        resolutionDropdown.value = PlayerPrefs.GetInt(RESOLUTION, currentResIndex);
         resolutionDropdown.RefreshShownValue();
         resolutionDropdown.onValueChanged.AddListener(SetResolution);
 
-        bool isFullscreen = PlayerPrefs.GetInt(FULLSCREEN, 1) == 1;
+        bool isFS = PlayerPrefs.GetInt(FULLSCREEN, 1) == 1;
         if (fullscreenToggle != null)
         {
-            fullscreenToggle.isOn = isFullscreen;
+            fullscreenToggle.isOn = isFS;
             fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
         }
-        Screen.fullScreen = isFullscreen;
     }
 
-    private void SetFullscreen(bool value)
-    {
-        Screen.fullScreen = value;
-        PlayerPrefs.SetInt(FULLSCREEN, value ? 1 : 0);
-    }
-
-    private void SetResolution(int index)
-    {
-        Resolution res = resolutions[index];
-        Screen.SetResolution(res.width, res.height, Screen.fullScreen);
-        PlayerPrefs.SetInt(RESOLUTION, index);
-    }
+    private void SetFullscreen(bool val) { Screen.fullScreen = val; PlayerPrefs.SetInt(FULLSCREEN, val ? 1 : 0); }
+    private void SetResolution(int index) { Resolution res = resolutions[index]; Screen.SetResolution(res.width, res.height, Screen.fullScreen); PlayerPrefs.SetInt(RESOLUTION, index); }
 
     // ---- Keybindings --------------------------------------------------------
 
     private void SetupKeybindingsDisplay()
     {
-        if (moveUpText != null) moveUpText.text = "Move Up       Arrow Up / W";
-        if (moveDownText != null) moveDownText.text = "Move Down     Arrow Down / S";
-        if (moveLeftText != null) moveLeftText.text = "Move Left     Arrow Left / A";
-        if (moveRightText != null) moveRightText.text = "Move Right    Arrow Right / D";
+        if (moveUpText != null) moveUpText.text = "Move Up: W / UpArrow";
+        if (moveDownText != null) moveDownText.text = "Move Down: S / DownArrow";
+        if (moveLeftText != null) moveLeftText.text = "Move Left: A / LeftArrow";
+        if (moveRightText != null) moveRightText.text = "Move Right: D / RightArrow";
     }
 
-    // ---- Reset & Back -------------------------------------------------------
+    // ---- Final Implementation: Reset & Back ---------------------------------
 
     private void WireButtons()
     {
@@ -239,26 +228,50 @@ public class SettingsManager : MonoBehaviour
         rightArrowButton?.onClick.AddListener(GoRight);
         backButton?.onClick.AddListener(() => SceneManager.LoadScene("MainMenu"));
 
-        resetProgressButton?.onClick.AddListener(() =>
-        {
-            if (confirmResetPanel != null)
-                confirmResetPanel.SetActive(true);
+        // Step 1: Show the confirmation box
+        resetProgressButton?.onClick.AddListener(() => {
+            if (confirmResetPanel != null) confirmResetPanel.SetActive(true);
         });
 
-        confirmYesButton?.onClick.AddListener(() =>
-        {
-            PlayerPrefs.DeleteAll();
-            PlayerPrefs.Save();
-            if (PlayerUpgrades.Instance != null) Destroy(PlayerUpgrades.Instance.gameObject);
-            if (GameManager.Instance != null) Destroy(GameManager.Instance.gameObject);
-            if (confirmResetPanel != null)
-                confirmResetPanel.SetActive(false);
+        // Step 2: Handle the "NO" - just hide the box
+        confirmNoButton?.onClick.AddListener(() => {
+            if (confirmResetPanel != null) confirmResetPanel.SetActive(false);
         });
 
-        confirmNoButton?.onClick.AddListener(() =>
-        {
-            if (confirmResetPanel != null)
-                confirmResetPanel.SetActive(false);
-        });
+        // Step 3: Handle the "YES" - perform the reset
+        confirmYesButton?.onClick.AddListener(PerformFullReset);
+    }
+
+    private void PerformFullReset()
+    {
+        Debug.Log("Performing Progress Reset...");
+
+        // Store current settings so they aren't lost
+        float master = PlayerPrefs.GetFloat(MASTER_VOL, 0.8f);
+        float music = PlayerPrefs.GetFloat(MUSIC_VOL, 0.8f);
+        float sfx = PlayerPrefs.GetFloat(SFX_VOL, 0.8f);
+        int res = PlayerPrefs.GetInt(RESOLUTION, 0);
+        int fs = PlayerPrefs.GetInt(FULLSCREEN, 1);
+
+        // Clear everything
+        PlayerPrefs.DeleteAll();
+
+        // Restore Settings only
+        PlayerPrefs.SetFloat(MASTER_VOL, master);
+        PlayerPrefs.SetFloat(MUSIC_VOL, music);
+        PlayerPrefs.SetFloat(SFX_VOL, sfx);
+        PlayerPrefs.SetInt(RESOLUTION, res);
+        PlayerPrefs.SetInt(FULLSCREEN, fs);
+        PlayerPrefs.Save();
+
+        // Destroy dynamic objects if they exist
+        // Note: Replace "PlayerUpgrades" or "GameManager" with your actual script names
+        GameObject pu = GameObject.Find("PlayerUpgrades"); // Or search for instance
+        if (pu != null) Destroy(pu);
+
+        // Hide panel and provide feedback
+        if (confirmResetPanel != null) confirmResetPanel.SetActive(false);
+
+        Debug.Log("Reset Complete. Settings Preserved.");
     }
 }

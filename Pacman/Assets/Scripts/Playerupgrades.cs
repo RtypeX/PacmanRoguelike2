@@ -4,14 +4,13 @@ using System.Collections.Generic;
 /// <summary>
 /// PlayerUpgrades - Stores all upgrades the player has collected this run.
 /// Lives on the GameManager GameObject (DontDestroyOnLoad).
+///
+/// Currency is owned entirely by CurrencyManager — do not store Points or
+/// FruitCurrency here. Use CurrencyManager.Instance to read/spend currency.
 /// </summary>
 public class PlayerUpgrades : MonoBehaviour
 {
     public static PlayerUpgrades Instance { get; private set; }
-
-    // Current currencies
-    public int Points { get; private set; } = 0;
-    public int FruitCurrency { get; private set; } = 0;
 
     // Upgrade state
     public float SpeedBonus { get; private set; } = 0f;
@@ -28,28 +27,47 @@ public class PlayerUpgrades : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // Called by PacmanController event
+    // ---- Currency convenience (delegates to CurrencyManager) ---------------
+
+    /// <summary>
+    /// Shortcut so callers that previously used PlayerUpgrades.AddPoints still work.
+    /// Routes through CurrencyManager so there is only one source of truth.
+    /// </summary>
     public void AddPoints(int amount)
     {
-        Points += Mathf.RoundToInt(amount * ScoreMultiplier);
+        CurrencyManager.Instance?.AddPoints(amount);
     }
 
-    public void AddFruitCurrency(int amount) => FruitCurrency += amount;
+    /// <summary>
+    /// Shortcut for fruit currency — only adds if fruit is unlocked.
+    /// </summary>
+    public void AddFruitCurrency(int amount)
+    {
+        CurrencyManager.Instance?.AddFruitCurrency(amount);
+    }
+
+    // ---- Affordability check -----------------------------------------------
 
     public bool CanAfford(UpgradeData upgrade)
     {
+        if (CurrencyManager.Instance == null) return false;
+
         return upgrade.costType == CurrencyType.Points
-            ? Points >= upgrade.cost
-            : FruitCurrency >= upgrade.cost;
+            ? CurrencyManager.Instance.Points >= upgrade.cost
+            : CurrencyManager.Instance.FruitCurrency >= upgrade.cost;
     }
+
+    // ---- Apply upgrade ------------------------------------------------------
 
     public void ApplyUpgrade(UpgradeData upgrade)
     {
         if (!CanAfford(upgrade)) return;
 
-        // Deduct cost
-        if (upgrade.costType == CurrencyType.Points) Points -= upgrade.cost;
-        else FruitCurrency -= upgrade.cost;
+        // Deduct cost via CurrencyManager
+        if (upgrade.costType == CurrencyType.Points)
+            CurrencyManager.Instance.SpendPoints(upgrade.cost);
+        else
+            CurrencyManager.Instance.SpendFruitCurrency(upgrade.cost);
 
         // Apply effect
         switch (upgrade.upgradeType)
@@ -76,7 +94,7 @@ public class PlayerUpgrades : MonoBehaviour
 
             case UpgradeType.UnlockFruit:
                 FruitUnlocked = true;
-                GameManager.Instance?.UnlockFruit();
+                CurrencyManager.Instance?.UnlockFruit();   // UnlockFruit also calls GameManager
                 break;
 
             case UpgradeType.ScoreMultiplier:

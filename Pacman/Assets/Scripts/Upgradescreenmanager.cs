@@ -228,7 +228,7 @@ public class UpgradeScreenManager : MonoBehaviour
     private void RefreshCurrencyDisplay()
     {
         if (PlayerUpgrades.Instance == null) return;
-        if (pointsText != null) pointsText.text = "POINTS: " + PlayerUpgrades.Instance.Points;
-        if (fruitCurrencyText != null) fruitCurrencyText.text = "FRUIT: " + PlayerUpgrades.Instance.FruitCurrency;
+        if (pointsText != null) pointsText.text = "POINTS: " + CurrencyManager.Instance.Points;
+        if (fruitCurrencyText != null) fruitCurrencyText.text = "FRUIT: " + CurrencyManager.Instance.FruitCurrency;
     }
 }
