@@ -4,39 +4,40 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public class Animtion : MonoBehaviour
 {
-    public float moveSpeed = 5f;
-
     private Rigidbody2D rb;
     private Animator animator;
 
-    private Vector2 movement;
+    // Reference to your movement script
+    private testMove movementScript;
+
+    // Stores last direction so animation doesn't snap when stopping
+    private Vector2 lastDirection;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+
+        // IMPORTANT: Replace with your actual movement script name
+        movementScript = GetComponent<testMove>();
     }
 
     void Update()
     {
-        // Get input (Arrow keys or WASD)
-        movement.x = Input.GetAxisRaw("Horizontal");
-        movement.y = Input.GetAxisRaw("Vertical");
+        // Get direction from movement script
+        Vector2 direction = movementScript.currentDirection;
 
-        // Normalize diagonal movement (prevents faster speed)
-        movement = movement.normalized;
+        bool isMoving = direction != Vector2.zero;
 
-        // Send data to Animator
-        animator.SetFloat("MoveX", movement.x);
-        animator.SetFloat("MoveY", movement.y);
-        animator.SetBool("IsMoving", movement != Vector2.zero);
+        // Store last direction for idle facing
+        if (isMoving)
+        {
+            lastDirection = direction;
+        }
 
-        Debug.Log(movement);
-    }
-
-    void FixedUpdate()
-    {
-        // Move player
-       
+        // Send values to Animator
+        animator.SetFloat("MoveX", lastDirection.x);
+        animator.SetFloat("MoveY", lastDirection.y);
+        animator.SetBool("IsMoving", isMoving);
     }
 }

@@ -43,7 +43,7 @@ public class testMove : MonoBehaviour
     private Rigidbody2D rb;
     private Animator animator;
 
-    private Vector2 currentDirection = Vector2.zero;
+    public Vector2 currentDirection = Vector2.zero;
     private Vector2 queuedDirection = Vector2.zero;
 
     private float powerUpTimer = 0f;
