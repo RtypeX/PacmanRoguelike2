@@ -14,10 +14,6 @@ public class testMove : MonoBehaviour
     [Tooltip("Base movement speed. Increased by upgrades.")]
     public float moveSpeed = 5f;
 
-    [Header("Rotation")]
-    [Tooltip("If true, the script will rotate the Transform to face movement direction.")]
-    public bool useDynamicRotation = true;
-
     [Header("Lives")]
     [Tooltip("Starting lives. Upgradeable.")]
     public int maxLives = 3;
@@ -88,11 +84,6 @@ public class testMove : MonoBehaviour
         UpdatePowerUpTimer();
         UpdateInvincibility();
         UpdateAnimation();
-
-        if (useDynamicRotation)
-        {
-            RotateSprite();
-        }
     }
 
     private void FixedUpdate()
@@ -114,15 +105,6 @@ public class testMove : MonoBehaviour
             queuedDirection = Vector2.right;
     }
 
-    private void RotateSprite()
-    {
-        // Only rotate if we are actually moving to avoid snapping back to 0 degrees when stopped
-        if (currentDirection != Vector2.zero)
-        {
-            float angle = Mathf.Atan2(currentDirection.y, currentDirection.x) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, 0, angle);
-        }
-    }
 
     // ─── Movement ─────────────────────────────────────────────────────────
 

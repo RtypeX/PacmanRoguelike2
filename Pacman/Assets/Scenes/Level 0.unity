@@ -3903,6 +3903,7 @@ GameObject:
   - component: {fileID: 825091227}
   - component: {fileID: 825091231}
   - component: {fileID: 825091232}
+  - component: {fileID: 825091233}
   m_Layer: 0
   m_Name: Pacman
   m_TagString: Player
@@ -3920,7 +3921,7 @@ Animator:
   m_GameObject: {fileID: 825091225}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 36bb64eb20b9a134bb2d53c77bf1c817, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -4082,6 +4083,19 @@ MonoBehaviour:
   gridOffset: {x: 0.5, y: 0.5}
   turnTolerance: 0.06
   powerUpDuration: 8
+--- !u!114 &825091233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 825091225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29e7aa9e52fad224f97adbdb5fa26756, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
 --- !u!1 &1349851106
 GameObject:
   m_ObjectHideFlags: 0
