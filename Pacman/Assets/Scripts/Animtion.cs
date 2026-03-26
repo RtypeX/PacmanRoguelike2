@@ -37,6 +37,6 @@ public class Animtion : MonoBehaviour
     void FixedUpdate()
     {
         // Move player
-        rb.velocity = movement * moveSpeed;
+       
     }
 }
