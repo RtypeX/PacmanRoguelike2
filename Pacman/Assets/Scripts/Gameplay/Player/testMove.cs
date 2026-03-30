@@ -42,9 +42,10 @@ public class testMove : MonoBehaviour
     private float invincibilityTimer = 0f;
     private const float INVINCIBILITY_DURATION = 1.5f;
 
-    private static readonly int AnimDirX = Animator.StringToHash("DirX");
-    private static readonly int AnimDirY = Animator.StringToHash("DirY");
-    private static readonly int AnimPowered = Animator.StringToHash("IsPowered");
+    private static readonly int AnimMoveX = Animator.StringToHash("MoveX");
+    private static readonly int AnimMoveY = Animator.StringToHash("MoveY");
+    private static readonly int AnimIsMoving = Animator.StringToHash("IsMoving");
+    private Vector2 lastDirection = Vector2.right;
 
     // ─── Events ──────────────────────────────────────────────────────────────
 
@@ -194,7 +195,7 @@ public class testMove : MonoBehaviour
         Score += finalAmount;
         CurrencyManager.Instance?.AddPoints(finalAmount);
         OnScoreChanged?.Invoke(Score);
-        HUDManager.Instance?.ShowScorePopup(finalAmount, transform.position);
+        ManageHUD.Instance?.ShowScorePopup(finalAmount, transform.position);
     }
 
     public void AddFruitCurrency(int amount)
@@ -253,9 +254,15 @@ public class testMove : MonoBehaviour
     private void UpdateAnimation()
     {
         if (animator == null) return;
-        animator.SetFloat(AnimDirX, currentDirection.x);
-        animator.SetFloat(AnimDirY, currentDirection.y);
-        animator.SetBool(AnimPowered, IsPoweredUp);
+
+        bool isMoving = currentDirection != Vector2.zero;
+
+        if (isMoving)
+            lastDirection = currentDirection;
+
+        animator.SetFloat(AnimMoveX, lastDirection.x);
+        animator.SetFloat(AnimMoveY, lastDirection.y);
+        animator.SetBool(AnimIsMoving, isMoving);
     }
 
     // ─── Collision Detection ──────────────────────────────────────────────
@@ -281,7 +288,7 @@ public class testMove : MonoBehaviour
                 other.gameObject.SetActive(false);
                 AddScore(100);
                 AddFruitCurrency(1);
-                HUDManager.Instance?.UpdateFruitCurrency(
+                ManageHUD.Instance?.UpdateFruitCurrency(
                     CurrencyManager.Instance != null ? CurrencyManager.Instance.FruitCurrency : FruitCurrency);
                 break;
 

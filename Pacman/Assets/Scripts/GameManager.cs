@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,6 +16,10 @@ public class GameManager : MonoBehaviour
     public float startingTimerDuration = 60f; // Set this to your desired time limit
     public int startingLives = 3;
 
+    [Header("Power Pellet Spawning")]
+    public GameObject powerPelletPrefab;
+    public Transform[] bonusPelletSpawnPoints;
+
     [Header("Scene Names")]
     public string gameSceneName = "Level 0";
     public string upgradeSceneName = "UpgradeScene";
@@ -26,6 +31,11 @@ public class GameManager : MonoBehaviour
     private bool timerRunning = false;
     private int pelletsRemaining = 0;
     private bool fruitUnlocked = false;
+    private Coroutine timerCoroutine;
+    private bool levelInitialized = false;
+    private bool launchedFromStartGame = false;
+    private int bonusPowerPelletCount = 0;
+    private float ghostFreezeDuration = 0f;
 
     private void Awake()
     {
@@ -36,36 +46,61 @@ public class GameManager : MonoBehaviour
         // Make sure these match the Inspector values immediately
         CurrentLevel = testStartLevel;
         CurrentTimerDuration = startingTimerDuration;
+
+        if (testStartPoints > 0 || testStartFruit > 0)
+            StartCoroutine(AddTestCurrencies());
     }
 
-    private void OnEnable() { testMove.OnPlayerDied += HandlePlayerDied; }
-    private void OnDisable() { testMove.OnPlayerDied -= HandlePlayerDied; }
+    private void Start()
+    {
+        if (SceneManager.GetActiveScene().name == gameSceneName)
+            InitLevel();
+    }
+
+    private void OnEnable()
+    {
+        testMove.OnPlayerDied += HandlePlayerDied;
+        SceneManager.sceneLoaded += OnGameSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        testMove.OnPlayerDied -= HandlePlayerDied;
+        SceneManager.sceneLoaded -= OnGameSceneLoaded;
+    }
 
     public void StartGame()
     {
+        CurrencyManager.Instance?.ResetForNewRun();
+        PlayerUpgrades.Instance?.ResetUpgrades();
+
+        launchedFromStartGame = true;
         CurrentLevel = 1;
         CurrentTimerDuration = startingTimerDuration;
+        fruitUnlocked = false;
+        bonusPowerPelletCount = 0;
+        ghostFreezeDuration = 0f;
         SceneManager.LoadScene(gameSceneName);
-        SceneManager.sceneLoaded += OnGameSceneLoaded;
     }
 
     private void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log("Scene Loaded: " + scene.name); // Check if this matches gameSceneName
         if (scene.name != gameSceneName) return;
-
-        SceneManager.sceneLoaded -= OnGameSceneLoaded;
         InitLevel();
     }
 
     private void InitLevel()
     {
+        levelInitialized = false;
         StartCoroutine(DelayedInit());
     }
 
     private IEnumerator DelayedInit()
     {
         yield return new WaitForSeconds(0.1f);
+
+        if (bonusPowerPelletCount > 0)
+            SpawnBonusPowerPellets(bonusPowerPelletCount);
 
         pelletsRemaining = GameObject.FindGameObjectsWithTag("Pellet").Length
                          + GameObject.FindGameObjectsWithTag("PowerPellet").Length;
@@ -76,14 +111,54 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
 
         ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
+        ManageHUD.Instance?.SetPowerUpMaxDuration(pacman != null ? pacman.powerUpDuration : 8f);
 
-        // REMOVE StopAllCoroutines(); <--- This was killing the script here
-        StartCoroutine(RunTimer());
+        if (ghostFreezeDuration > 0f)
+            StartCoroutine(FreezeGhosts(ghostFreezeDuration));
+
+        levelInitialized = true;
+        StartTimer();
+    }
+
+    private void SpawnBonusPowerPellets(int count)
+    {
+        if (powerPelletPrefab == null || bonusPelletSpawnPoints == null || bonusPelletSpawnPoints.Length == 0)
+            return;
+
+        List<Transform> available = new List<Transform>(bonusPelletSpawnPoints);
+        for (int i = available.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            Transform tmp = available[i];
+            available[i] = available[j];
+            available[j] = tmp;
+        }
+
+        int toSpawn = Mathf.Min(count, available.Count);
+        for (int i = 0; i < toSpawn; i++)
+            Instantiate(powerPelletPrefab, available[i].position, Quaternion.identity);
+    }
+
+    private IEnumerator FreezeGhosts(float duration)
+    {
+        GhostController[] ghosts = FindObjectsOfType<GhostController>();
+        foreach (GhostController ghost in ghosts)
+            ghost.SetFrozen(true);
+
+        yield return new WaitForSeconds(duration);
+
+        foreach (GhostController ghost in ghosts)
+            if (ghost != null) ghost.SetFrozen(false);
+    }
+
+    private void StartTimer()
+    {
+        StopTimer();
+        timerCoroutine = StartCoroutine(RunTimer());
     }
 
     private IEnumerator RunTimer()
     {
-        Debug.Log("Timer Coroutine Started with: " + CurrentTimerDuration);
         timerRunning = true;
         timerRemaining = CurrentTimerDuration;
 
@@ -107,7 +182,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void StopTimer() => timerRunning = false;
+    public void StopTimer()
+    {
+        timerRunning = false;
+
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine);
+            timerCoroutine = null;
+        }
+    }
 
     public void OnPelletEaten()
     {
@@ -147,16 +231,16 @@ public class GameManager : MonoBehaviour
 
     private void HandleTimeOut()
     {
+        if (!levelInitialized) return;
         StopTimer();
-        // Show Lose Screen via HUD
         ManageHUD.Instance?.ShowLoseScreen();
         Time.timeScale = 0f;
     }
 
     private void HandlePlayerDied()
     {
+        if (!levelInitialized) return;
         StopTimer();
-        // You can choose to show Lose Screen or go straight to Upgrades
         ManageHUD.Instance?.ShowLoseScreen();
     }
 
@@ -174,15 +258,33 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    public void GoToUpgradeScreen() => SceneManager.LoadScene(upgradeSceneName);
+    public void GoToUpgradeScreen()
+    {
+        if (!launchedFromStartGame && SceneManager.GetActiveScene().name == gameSceneName)
+            return;
+
+        levelInitialized = false;
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(upgradeSceneName);
+    }
 
     private IEnumerator AddTestCurrencies()
     {
-        yield return new WaitUntil(() => PlayerUpgrades.Instance != null);
-        if (testStartPoints > 0) PlayerUpgrades.Instance.AddPoints(testStartPoints);
-        if (testStartFruit > 0) PlayerUpgrades.Instance.AddFruitCurrency(testStartFruit);
+        yield return new WaitUntil(() =>
+            CurrencyManager.Instance != null && PlayerUpgrades.Instance != null);
+
+        if (testStartPoints > 0)
+            CurrencyManager.Instance.AddPoints(testStartPoints);
+
+        if (testStartFruit > 0)
+        {
+            CurrencyManager.Instance.UnlockFruit();
+            CurrencyManager.Instance.AddFruitCurrency(testStartFruit);
+        }
     }
 
     public void UpgradeTimerDuration(float bonus) => CurrentTimerDuration += bonus;
     public void UnlockFruit() => fruitUnlocked = true;
+    public void UpgradePowerPelletCount(int count) => bonusPowerPelletCount += count;
+    public void UpgradeGhostFreeze(float duration) => ghostFreezeDuration += duration;
 }

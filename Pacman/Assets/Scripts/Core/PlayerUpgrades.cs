@@ -110,7 +110,7 @@ public class PlayerUpgrades : MonoBehaviour
             case UpgradeType.PowerPelletDuration:
                 PowerDurationBonus += upgrade.upgradeValue;
                 FindObjectOfType<testMove>()?.UpgradePowerDuration(upgrade.upgradeValue);
-                HUDManager.Instance?.SetPowerUpMaxDuration(8f + PowerDurationBonus);
+                ManageHUD.Instance?.SetPowerUpMaxDuration(8f + PowerDurationBonus);
                 break;
 
             case UpgradeType.UnlockFruit:

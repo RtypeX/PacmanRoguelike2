@@ -17,6 +17,7 @@ public class ManageHUD : MonoBehaviour
 
     [Header("Timer")]
     public TextMeshProUGUI timerText; // Drag your Timer Text here
+    private float powerUpMaxDuration = 8f;
 
     public void ShowLoseScreen()
     {
@@ -79,6 +80,9 @@ public class ManageHUD : MonoBehaviour
     public void InitHUD(int lives, int level, float timer, bool fruit)
     {
         UpdateLivesUI(lives);
+        SetTimerDisplay(timer);
+        if (winPanel != null) winPanel.SetActive(false);
+        if (losePanel != null) losePanel.SetActive(false);
     }
 
     public void UpdateScoreUI(int newScore)
@@ -100,6 +104,15 @@ public class ManageHUD : MonoBehaviour
             winPanel.SetActive(true);
             Time.timeScale = 0f;
         }
+    }
+
+    public void ShowScorePopup(int amount, Vector3 worldPosition) { }
+
+    public void UpdateFruitCurrency(int amount) { }
+
+    public void SetPowerUpMaxDuration(float duration)
+    {
+        powerUpMaxDuration = duration;
     }
 
 }
