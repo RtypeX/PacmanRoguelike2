@@ -108,12 +108,27 @@ public class GameManager : MonoBehaviour
     {
         pelletsRemaining--;
 
-        Debug.Log($"<color=green>Pellet Eaten!</color> {pelletsRemaining} left.");
+        // Log the current count
+        Debug.Log($"Pellet Eaten! Logic says {pelletsRemaining} left.");
 
+        // SAFETY CHECK: If logic thinks we are done, OR if the scene actually has 0 pellets
         if (pelletsRemaining <= 0)
         {
-            Debug.Log("<color=cyan>Win condition met!</color> Triggering Win Screen.");
-            WinLevel();
+            // Double check the actual scene objects to be 100% sure
+            int actualCount = GameObject.FindGameObjectsWithTag("Pellet").Length +
+                              GameObject.FindGameObjectsWithTag("PowerPellet").Length;
+
+            if (actualCount == 0)
+            {
+                Debug.Log("<color=cyan>Win condition confirmed!</color>");
+                WinLevel();
+            }
+            else
+            {
+                // This fixes the count if it got out of sync
+                pelletsRemaining = actualCount;
+                Debug.LogWarning($"Count was out of sync! Adjusted to actual: {actualCount}");
+            }
         }
     }
 

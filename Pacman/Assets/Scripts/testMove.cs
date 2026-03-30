@@ -257,9 +257,19 @@ public class testMove : MonoBehaviour
         switch (other.tag)
         {
             case "Pellet":
+                Debug.Log("DEBUG: Detected Pellet. Trying to tell GameManager...");
                 other.gameObject.SetActive(false);
                 AddScore(10);
-                GameManager.Instance?.OnPelletEaten();
+
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.OnPelletEaten();
+                    Debug.Log("DEBUG: GameManager successfully notified.");
+                }
+                else
+                {
+                    Debug.LogError("DEBUG: GameManager.Instance is NULL! Is the GameManager script in your scene?");
+                }
                 break;
 
             case "PowerPellet":
