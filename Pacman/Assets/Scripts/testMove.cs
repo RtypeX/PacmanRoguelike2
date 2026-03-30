@@ -1,9 +1,5 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// PacmanController - Handles player movement, input, collisions, and state.
-/// Now includes automatic sprite rotation to face the direction of travel.
-/// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 public class testMove : MonoBehaviour
@@ -11,24 +7,15 @@ public class testMove : MonoBehaviour
     // ─── Inspector Fields ───────────────────────────────────────────────────
 
     [Header("Movement")]
-    [Tooltip("Base movement speed. Increased by upgrades.")]
     public float moveSpeed = 5f;
 
     [Header("Lives")]
-    [Tooltip("Starting lives. Upgradeable.")]
     public int maxLives = 3;
 
     [Header("Grid / Tile Settings")]
-    [Tooltip("Size of one maze tile in world units.")]
     public float tileSize = 1f;
-
-    [Tooltip("Layer mask for walls — used to check if a direction is passable.")]
     public LayerMask wallLayer;
-
-    [Tooltip("World-space offset of tile centers. For most tilemaps this is (0.5, 0.5).")]
     public Vector2 gridOffset = new Vector2(0.5f, 0.5f);
-
-    [Tooltip("How close Pacman must be to the lane center before a turn is allowed.")]
     public float turnTolerance = 0.08f;
 
     // ─── Runtime State ───────────────────────────────────────────────────────
@@ -78,12 +65,23 @@ public class testMove : MonoBehaviour
         CurrentLives = maxLives;
     }
 
+    private void Start()
+    {
+        // FIX: This ensures the HUD sees the numbers immediately when the level loads
+        OnScoreChanged?.Invoke(Score);
+        OnLivesChanged?.Invoke(CurrentLives);
+        Debug.Log("Pacman Started. Lives sent to HUD: " + CurrentLives);
+    }
+
     private void Update()
     {
         HandleInput();
         UpdatePowerUpTimer();
         UpdateInvincibility();
         UpdateAnimation();
+
+        // Manual Test for Death
+        if (Input.GetKeyDown(KeyCode.K)) TakeHit();
     }
 
     private void FixedUpdate()
@@ -104,7 +102,6 @@ public class testMove : MonoBehaviour
         else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
             queuedDirection = Vector2.right;
     }
-
 
     // ─── Movement ─────────────────────────────────────────────────────────
 
@@ -158,7 +155,7 @@ public class testMove : MonoBehaviour
     private bool IsAtCellCenter(Vector2 pos)
     {
         Vector2 center = WorldToCellCenter(pos);
-        return Vector2.Distance(pos, center) < 0.08f;
+        return Vector2.Distance(pos, center) < turnTolerance;
     }
 
     // ─── Power-Up ─────────────────────────────────────────────────────────
@@ -203,6 +200,7 @@ public class testMove : MonoBehaviour
 
         CurrentLives--;
         OnLivesChanged?.Invoke(CurrentLives);
+        Debug.Log("Took Hit! Lives remaining: " + CurrentLives);
 
         if (CurrentLives <= 0)
         {
@@ -243,6 +241,7 @@ public class testMove : MonoBehaviour
 
     private void UpdateAnimation()
     {
+        if (animator == null) return;
         animator.SetFloat(AnimDirX, currentDirection.x);
         animator.SetFloat(AnimDirY, currentDirection.y);
         animator.SetBool(AnimPowered, IsPoweredUp);
@@ -252,19 +251,22 @@ public class testMove : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // DEBUG: See what we are hitting
+        Debug.Log("Pacman triggered collision with: " + other.name + " Tag: " + other.tag);
+
         switch (other.tag)
         {
             case "Pellet":
                 other.gameObject.SetActive(false);
                 AddScore(10);
-                GameManager.Instance.OnPelletEaten();
+                GameManager.Instance?.OnPelletEaten();
                 break;
 
             case "PowerPellet":
                 other.gameObject.SetActive(false);
                 ActivatePowerUp();
                 AddScore(50);
-                GameManager.Instance.OnPelletEaten();
+                GameManager.Instance?.OnPelletEaten();
                 break;
 
             case "Fruit":
@@ -275,16 +277,17 @@ public class testMove : MonoBehaviour
 
             case "Ghost":
                 GhostController ghost = other.GetComponent<GhostController>();
-                if (ghost == null) break;
-
-                if (IsPoweredUp && ghost.IsFrightened)
+                if (ghost != null)
                 {
-                    ghost.OnEaten();
-                    AddScore(200);
-                }
-                else if (!ghost.IsFrightened && !ghost.IsEaten)
-                {
-                    TakeHit();
+                    if (IsPoweredUp && ghost.IsFrightened)
+                    {
+                        ghost.OnEaten();
+                        AddScore(200);
+                    }
+                    else if (!ghost.IsFrightened && !ghost.IsEaten)
+                    {
+                        TakeHit();
+                    }
                 }
                 break;
         }

@@ -10,28 +10,17 @@ public class ManageHUD : MonoBehaviour
     public TextMeshProUGUI livesText;
 
     [Header("Win Screen")]
-    public GameObject winPanel; // Drag your WinPanel here in the Inspector
-
-    public void ShowWinScreen()
-    {
-        if (winPanel != null)
-        {
-            winPanel.SetActive(true);
-            // Optional: Stop time so ghosts stop moving
-            Time.timeScale = 0f;
-        }
-    }
+    public GameObject winPanel;
 
     private void Awake()
     {
-        // Singleton setup so GameManager can find it
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
     private void OnEnable()
     {
-        // Subscribe to both events from your movement script
+        // These MUST match the name of your player script (testMove)
         testMove.OnScoreChanged += UpdateScoreUI;
         testMove.OnLivesChanged += UpdateLivesUI;
     }
@@ -42,12 +31,10 @@ public class ManageHUD : MonoBehaviour
         testMove.OnLivesChanged -= UpdateLivesUI;
     }
 
-    // This matches the InitHUD call in your GameManager
+    // This keeps GameManager happy
     public void InitHUD(int lives, int level, float timer, bool fruit)
     {
         UpdateLivesUI(lives);
-        UpdateScoreUI(PlayerUpgrades.Instance != null ? PlayerUpgrades.Instance.Points : 0);
-        // Add timer/level initialization here if needed later
     }
 
     public void UpdateScoreUI(int newScore)
@@ -62,16 +49,15 @@ public class ManageHUD : MonoBehaviour
             livesText.text = "LIVES: " + currentLives.ToString();
     }
 
-    // Add this to your ManageHUD variables
-    public TextMeshProUGUI timerText;
-
-    // Add this function inside ManageHUD
-    public void SetTimerDisplay(float timeRemaining)
+    public void ShowWinScreen()
     {
-        if (timerText != null)
+        if (winPanel != null)
         {
-            // CeilToInt turns 9.2 into 10 so the player doesn't see decimals
-            timerText.text = "TIME: " + Mathf.CeilToInt(timeRemaining).ToString();
+            winPanel.SetActive(true);
+            Time.timeScale = 0f;
         }
     }
+
+    // Dummy method so GameManager doesn't break
+    public void SetTimerDisplay(float time) { }
 }

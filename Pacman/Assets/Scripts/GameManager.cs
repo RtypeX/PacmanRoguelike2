@@ -65,15 +65,18 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator DelayedInit()
     {
-        yield return null;
+        // Wait a small moment to ensure all spawned pellets are registered
+        yield return new WaitForSeconds(0.1f);
 
         pelletsRemaining = GameObject.FindGameObjectsWithTag("Pellet").Length
                          + GameObject.FindGameObjectsWithTag("PowerPellet").Length;
 
+        Debug.Log($"<color=yellow>Level Initialized.</color> Total pellets found: {pelletsRemaining}");
+
         testMove pacman = FindObjectOfType<testMove>();
         int lives = pacman != null ? pacman.CurrentLives : startingLives;
 
-        // Changed HUDManager to manageHUD
+        // Initialize HUD
         ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
 
         StopAllCoroutines();
@@ -88,11 +91,15 @@ public class GameManager : MonoBehaviour
         while (timerRemaining > 0f && timerRunning)
         {
             timerRemaining -= Time.deltaTime;
-            //ManageHUD.Instance?.SetTimerDisplay(timerRemaining); // Changed name here
+            // ManageHUD.Instance?.SetTimerDisplay(timerRemaining); 
             yield return null;
         }
 
-        if (timerRunning) { timerRunning = false; HandleTimeOut(); }
+        if (timerRunning)
+        {
+            timerRunning = false;
+            HandleTimeOut();
+        }
     }
 
     public void StopTimer() => timerRunning = false;
@@ -100,11 +107,12 @@ public class GameManager : MonoBehaviour
     public void OnPelletEaten()
     {
         pelletsRemaining--;
-        Debug.Log("Pellet eaten! Remaining: " + pelletsRemaining); // CHECK THE CONSOLE FOR THIS
+
+        Debug.Log($"<color=green>Pellet Eaten!</color> {pelletsRemaining} left.");
 
         if (pelletsRemaining <= 0)
         {
-            Debug.Log("All pellets gone! Triggering WinLevel...");
+            Debug.Log("<color=cyan>Win condition met!</color> Triggering Win Screen.");
             WinLevel();
         }
     }
@@ -112,8 +120,18 @@ public class GameManager : MonoBehaviour
     private void WinLevel()
     {
         StopTimer();
-        ManageHUD.Instance?.ShowWinScreen(); // Changed name here
-        Time.timeScale = 0f;
+
+        if (ManageHUD.Instance != null)
+        {
+            ManageHUD.Instance.ShowWinScreen();
+            Time.timeScale = 0f; // Freeze game play
+        }
+        else
+        {
+            Debug.LogError("FATAL: ManageHUD.Instance is null! Make sure ManageHUD is in the scene.");
+            // Fallback so the game doesn't get stuck
+            ProceedToUpgrades();
+        }
     }
 
     private void HandlePlayerDied()
@@ -124,9 +142,10 @@ public class GameManager : MonoBehaviour
 
     private void HandleTimeOut() => GoToUpgradeScreen();
 
+    // IMPORTANT: This should be called by the Button on your Win Screen
     public void ProceedToUpgrades()
     {
-        Time.timeScale = 1f;
+        Time.timeScale = 1f; // Unfreeze the game!
         CurrentLevel++;
         GoToUpgradeScreen();
     }
