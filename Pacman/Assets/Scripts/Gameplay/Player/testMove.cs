@@ -1,8 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
-/// PacmanController - Handles player movement, input, collisions, and state.
-/// Now includes automatic sprite rotation to face the direction of travel.
+/// testMove handles player movement, input, collisions, scoring, and power-up state.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
@@ -75,6 +74,13 @@ public class testMove : MonoBehaviour
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+        if (PlayerUpgrades.Instance != null)
+        {
+            moveSpeed += PlayerUpgrades.Instance.SpeedBonus;
+            powerUpDuration += PlayerUpgrades.Instance.PowerDurationBonus;
+            maxLives += PlayerUpgrades.Instance.BonusLives;
+        }
 
         CurrentLives = maxLives;
     }
@@ -187,13 +193,19 @@ public class testMove : MonoBehaviour
 
     public void AddScore(int amount)
     {
-        Score += amount;
+        float multiplier = PlayerUpgrades.Instance != null ? PlayerUpgrades.Instance.ScoreMultiplier : 1f;
+        int finalAmount = Mathf.RoundToInt(amount * multiplier);
+
+        Score += finalAmount;
+        CurrencyManager.Instance?.AddPoints(finalAmount);
         OnScoreChanged?.Invoke(Score);
+        HUDManager.Instance?.ShowScorePopup(finalAmount, transform.position);
     }
 
     public void AddFruitCurrency(int amount)
     {
         FruitCurrency += amount;
+        CurrencyManager.Instance?.AddFruitCurrency(amount);
     }
 
     // ─── Damage / Lives ───────────────────────────────────────────────────
@@ -290,18 +302,20 @@ public class testMove : MonoBehaviour
                 other.gameObject.SetActive(false);
                 AddScore(100);
                 AddFruitCurrency(1);
+                HUDManager.Instance?.UpdateFruitCurrency(
+                    CurrencyManager.Instance != null ? CurrencyManager.Instance.FruitCurrency : FruitCurrency);
                 break;
 
             case "Ghost":
                 GhostController ghost = other.GetComponent<GhostController>();
                 if (ghost == null) break;
 
-                if (IsPoweredUp && ghost.IsFrightened)
+                if (IsPoweredUp && ghost.CanBeEaten)
                 {
                     ghost.OnEaten();
                     AddScore(200);
                 }
-                else if (!ghost.IsFrightened && !ghost.IsEaten)
+                else if (!ghost.IsEaten)
                 {
                     TakeHit();
                 }
