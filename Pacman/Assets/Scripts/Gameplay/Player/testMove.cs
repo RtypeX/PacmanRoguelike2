@@ -10,24 +10,15 @@ public class testMove : MonoBehaviour
     // ─── Inspector Fields ───────────────────────────────────────────────────
 
     [Header("Movement")]
-    [Tooltip("Base movement speed. Increased by upgrades.")]
     public float moveSpeed = 5f;
 
     [Header("Lives")]
-    [Tooltip("Starting lives. Upgradeable.")]
     public int maxLives = 3;
 
     [Header("Grid / Tile Settings")]
-    [Tooltip("Size of one maze tile in world units.")]
     public float tileSize = 1f;
-
-    [Tooltip("Layer mask for walls — used to check if a direction is passable.")]
     public LayerMask wallLayer;
-
-    [Tooltip("World-space offset of tile centers. For most tilemaps this is (0.5, 0.5).")]
     public Vector2 gridOffset = new Vector2(0.5f, 0.5f);
-
-    [Tooltip("How close Pacman must be to the lane center before a turn is allowed.")]
     public float turnTolerance = 0.08f;
 
     // ─── Runtime State ───────────────────────────────────────────────────────
@@ -63,7 +54,6 @@ public class testMove : MonoBehaviour
     public static event System.Action OnPowerUpStart;
     public static event System.Action OnPowerUpEnd;
 
-
     // ─── Unity Lifecycle ──────────────────────────────────────────────────
 
     private void Awake()
@@ -83,6 +73,12 @@ public class testMove : MonoBehaviour
         }
 
         CurrentLives = maxLives;
+    }
+
+    private void Start()
+    {
+        OnScoreChanged?.Invoke(Score);
+        OnLivesChanged?.Invoke(CurrentLives);
     }
 
     private void Update()
@@ -111,7 +107,6 @@ public class testMove : MonoBehaviour
         else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
             queuedDirection = Vector2.right;
     }
-
 
     // ─── Movement ─────────────────────────────────────────────────────────
 
@@ -165,7 +160,7 @@ public class testMove : MonoBehaviour
     private bool IsAtCellCenter(Vector2 pos)
     {
         Vector2 center = WorldToCellCenter(pos);
-        return Vector2.Distance(pos, center) < 0.08f;
+        return Vector2.Distance(pos, center) < turnTolerance;
     }
 
     // ─── Power-Up ─────────────────────────────────────────────────────────
@@ -216,6 +211,7 @@ public class testMove : MonoBehaviour
 
         CurrentLives--;
         OnLivesChanged?.Invoke(CurrentLives);
+        Debug.Log("Took Hit! Lives remaining: " + CurrentLives);
 
         if (CurrentLives <= 0)
         {
@@ -254,29 +250,12 @@ public class testMove : MonoBehaviour
 
     // ─── Animation ────────────────────────────────────────────────────────
 
-    // Add this at the top with your other hashes
-    private static readonly int AnimIsMoving = Animator.StringToHash("IsMoving");
-
     private void UpdateAnimation()
     {
-        // Check if we have any movement intent
-        bool isMoving = currentDirection != Vector2.zero;
-
-        // 1. Only update direction if moving (keeps Pacman facing the wall)
-        if (isMoving)
-        {
-            animator.SetFloat(AnimDirX, currentDirection.x);
-            animator.SetFloat(AnimDirY, currentDirection.y);
-        }
-
-        // 2. Tell the animator if we are moving or not
-        animator.SetBool(AnimIsMoving, isMoving);
-
-        // 3. Update power state
+        if (animator == null) return;
+        animator.SetFloat(AnimDirX, currentDirection.x);
+        animator.SetFloat(AnimDirY, currentDirection.y);
         animator.SetBool(AnimPowered, IsPoweredUp);
-
-        // 4. Force freeze/unfreeze
-        animator.speed = isMoving ? 1f : 0f;
     }
 
     // ─── Collision Detection ──────────────────────────────────────────────
@@ -288,14 +267,14 @@ public class testMove : MonoBehaviour
             case "Pellet":
                 other.gameObject.SetActive(false);
                 AddScore(10);
-                GameManager.Instance.OnPelletEaten();
+                GameManager.Instance?.OnPelletEaten();
                 break;
 
             case "PowerPellet":
                 other.gameObject.SetActive(false);
                 ActivatePowerUp();
                 AddScore(50);
-                GameManager.Instance.OnPelletEaten();
+                GameManager.Instance?.OnPelletEaten();
                 break;
 
             case "Fruit":
