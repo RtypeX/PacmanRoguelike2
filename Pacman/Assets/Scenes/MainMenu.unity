@@ -863,6 +863,7 @@ MonoBehaviour:
   slideInStagger: 0.1
   hoverScale: 1.2
   hoverDuration: 1
+  parentCanvas: {fileID: 0}
 --- !u!4 &1223917694
 Transform:
   m_ObjectHideFlags: 0
@@ -910,8 +911,10 @@ MonoBehaviour:
   testStartLevel: 2
   testStartPoints: 1000
   testStartFruit: 10
-  startingTimerDuration: 10
+  startingTimerDuration: 300
   startingLives: 3
+  powerPelletPrefab: {fileID: 0}
+  bonusPelletSpawnPoints: []
   gameSceneName: Level 0
   upgradeSceneName: UpgradeScene
 --- !u!4 &1250725075
