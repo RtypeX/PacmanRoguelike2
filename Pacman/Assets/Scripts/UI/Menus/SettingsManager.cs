@@ -66,23 +66,19 @@ public class SettingsManager : MonoBehaviour
 
     private void Start()
     {
-        // INITIALIZE PANELS
         panels.Add(audioPanel);
         panels.Add(displayPanel);
         panels.Add(keybindingsPanel);
         panels.Add(resetPanel);
 
-        // FORCE HIDE CONFIRMATION BOX
         if (confirmResetPanel != null)
             confirmResetPanel.SetActive(false);
 
-        // SETUP SYSTEMS
         LoadAudioSettings();
         SetupResolutionDropdown();
         SetupKeybindingsDisplay();
         WireButtons();
 
-        // SHOW FIRST CARD
         ShowCard(0, false);
     }
 
@@ -95,18 +91,13 @@ public class SettingsManager : MonoBehaviour
         int previousCard = currentCard;
         currentCard = index;
 
-        // Hide all cards
         foreach (var panel in panels)
             if (panel != null) panel.SetActive(false);
 
-        // Show current card
         if (panels[currentCard] != null)
         {
             panels[currentCard].SetActive(true);
 
-            // --- ADD THIS FIX HERE ---
-            // If we are on the ResetCard (index 3), 
-            // make sure the popup is hidden and the button is visible
             if (currentCard == 3 && confirmResetPanel != null)
             {
                 confirmResetPanel.SetActive(false);
@@ -220,7 +211,7 @@ public class SettingsManager : MonoBehaviour
         if (moveRightText != null) moveRightText.text = "Move Right: D / RightArrow";
     }
 
-    // ---- Final Implementation: Reset & Back ---------------------------------
+    // ---- Buttons ------------------------------------------------------------
 
     private void WireButtons()
     {
@@ -228,35 +219,32 @@ public class SettingsManager : MonoBehaviour
         rightArrowButton?.onClick.AddListener(GoRight);
         backButton?.onClick.AddListener(() => SceneManager.LoadScene("MainMenu"));
 
-        // Step 1: Show the confirmation box
         resetProgressButton?.onClick.AddListener(() => {
             if (confirmResetPanel != null) confirmResetPanel.SetActive(true);
         });
 
-        // Step 2: Handle the "NO" - just hide the box
         confirmNoButton?.onClick.AddListener(() => {
             if (confirmResetPanel != null) confirmResetPanel.SetActive(false);
         });
 
-        // Step 3: Handle the "YES" - perform the reset
         confirmYesButton?.onClick.AddListener(PerformFullReset);
     }
 
+    // ---- Full Reset ---------------------------------------------------------
+
     private void PerformFullReset()
     {
-        Debug.Log("Performing Progress Reset...");
+        Debug.Log("Performing Full Progress Reset...");
 
-        // Store current settings so they aren't lost
+        // --- 1. Preserve audio/display settings before wiping PlayerPrefs ---
         float master = PlayerPrefs.GetFloat(MASTER_VOL, 0.8f);
         float music = PlayerPrefs.GetFloat(MUSIC_VOL, 0.8f);
         float sfx = PlayerPrefs.GetFloat(SFX_VOL, 0.8f);
         int res = PlayerPrefs.GetInt(RESOLUTION, 0);
         int fs = PlayerPrefs.GetInt(FULLSCREEN, 1);
 
-        // Clear everything
         PlayerPrefs.DeleteAll();
 
-        // Restore Settings only
         PlayerPrefs.SetFloat(MASTER_VOL, master);
         PlayerPrefs.SetFloat(MUSIC_VOL, music);
         PlayerPrefs.SetFloat(SFX_VOL, sfx);
@@ -264,14 +252,33 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.SetInt(FULLSCREEN, fs);
         PlayerPrefs.Save();
 
-        // Destroy dynamic objects if they exist
-        // Note: Replace "PlayerUpgrades" or "GameManager" with your actual script names
-        GameObject pu = GameObject.Find("PlayerUpgrades"); // Or search for instance
-        if (pu != null) Destroy(pu);
+        // --- 2. Destroy all three persistent managers ------------------------
+        // Destroying via Instance references is safer than GameObject.Find,
+        // which can silently fail if the object name doesn't match exactly.
 
-        // Hide panel and provide feedback
-        if (confirmResetPanel != null) confirmResetPanel.SetActive(false);
+        if (PlayerUpgrades.Instance != null)
+        {
+            Debug.Log("Destroying PlayerUpgrades...");
+            Destroy(PlayerUpgrades.Instance.gameObject);
+        }
 
-        Debug.Log("Reset Complete. Settings Preserved.");
+        if (CurrencyManager.Instance != null)
+        {
+            Debug.Log("Destroying CurrencyManager...");
+            Destroy(CurrencyManager.Instance.gameObject);
+        }
+
+        // Destroy GameManager last — we're still running inside it (possibly).
+        // Using a coroutine so the destroy happens at end-of-frame after
+        // SceneManager.LoadScene has been queued.
+        if (GameManager.Instance != null)
+        {
+            Debug.Log("Destroying GameManager...");
+            Destroy(GameManager.Instance.gameObject);
+        }
+
+        // --- 3. Load Main Menu -----------------------------------------------
+        Debug.Log("Reset complete. Returning to MainMenu.");
+        SceneManager.LoadScene("MainMenu");
     }
 }

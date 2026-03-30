@@ -1,42 +1,31 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
-/// PacmanController - Handles player movement, input, collisions, and state.
-/// Attach to the Pacman GameObject. Requires a Rigidbody2D and Collider2D.
+/// testMove handles player movement, input, collisions, scoring, and power-up state.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
-public class PacmanController : MonoBehaviour
+public class testMove : MonoBehaviour
 {
     // ─── Inspector Fields ───────────────────────────────────────────────────
 
     [Header("Movement")]
-    [Tooltip("Base movement speed. Increased by upgrades.")]
     public float moveSpeed = 5f;
 
     [Header("Lives")]
-    [Tooltip("Starting lives. Upgradeable.")]
     public int maxLives = 3;
 
     [Header("Grid / Tile Settings")]
-    [Tooltip("Size of one maze tile in world units.")]
     public float tileSize = 1f;
-
-    [Tooltip("Layer mask for walls — used to check if a direction is passable.")]
     public LayerMask wallLayer;
+    public Vector2 gridOffset = new Vector2(0.5f, 0.5f);
+    public float turnTolerance = 0.08f;
 
     // ─── Runtime State ───────────────────────────────────────────────────────
 
-    // Current lives remaining
     public int CurrentLives { get; private set; }
-
-    // Whether Pacman is currently powered up (large pellet active)
     public bool IsPoweredUp { get; private set; }
-
-    // Total points scored this run
     public int Score { get; private set; }
-
-    // Fruit currency (unlocked via upgrade)
     public int FruitCurrency { get; private set; }
 
     // ─── Private Fields ───────────────────────────────────────────────────────
@@ -44,30 +33,24 @@ public class PacmanController : MonoBehaviour
     private Rigidbody2D rb;
     private Animator animator;
 
-    // The direction the player is currently moving
-    private Vector2 currentDirection = Vector2.zero;
-
-    // The next direction the player wants to move (buffered input)
+    public Vector2 currentDirection = Vector2.zero;
     private Vector2 queuedDirection = Vector2.zero;
 
-    // Power pellet timer
     private float powerUpTimer = 0f;
-    public float powerUpDuration = 8f; // upgradeable
+    public float powerUpDuration = 8f;
 
-    // Invincibility frames after being hit (prevents rapid multi-death)
     private float invincibilityTimer = 0f;
     private const float INVINCIBILITY_DURATION = 1.5f;
 
-    // Animator parameter hashes (for performance)
     private static readonly int AnimDirX = Animator.StringToHash("DirX");
     private static readonly int AnimDirY = Animator.StringToHash("DirY");
     private static readonly int AnimPowered = Animator.StringToHash("IsPowered");
 
-    // ─── Events (subscribe in GameManager, HUD, etc.) ─────────────────────
+    // ─── Events ──────────────────────────────────────────────────────────────
 
-    public static event System.Action<int> OnScoreChanged;     // passes new score
-    public static event System.Action<int> OnLivesChanged;     // passes remaining lives
-    public static event System.Action OnPlayerDied;            // 0 lives → game over
+    public static event System.Action<int> OnScoreChanged;
+    public static event System.Action<int> OnLivesChanged;
+    public static event System.Action OnPlayerDied;
     public static event System.Action OnPowerUpStart;
     public static event System.Action OnPowerUpEnd;
 
@@ -78,12 +61,24 @@ public class PacmanController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
 
-        // Rigidbody2D setup for top-down maze movement
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
+        if (PlayerUpgrades.Instance != null)
+        {
+            moveSpeed += PlayerUpgrades.Instance.SpeedBonus;
+            powerUpDuration += PlayerUpgrades.Instance.PowerDurationBonus;
+            maxLives += PlayerUpgrades.Instance.BonusLives;
+        }
+
         CurrentLives = maxLives;
+    }
+
+    private void Start()
+    {
+        OnScoreChanged?.Invoke(Score);
+        OnLivesChanged?.Invoke(CurrentLives);
     }
 
     private void Update()
@@ -99,12 +94,8 @@ public class PacmanController : MonoBehaviour
         Move();
     }
 
-    // ─── Input ────────────────────────────────────────────────────────────
+    // ─── Input & Rotation ───────────────────────────────────────────────────
 
-    /// <summary>
-    /// Reads arrow key (or WASD) input and buffers it as queuedDirection.
-    /// The queued direction is applied as soon as the path is clear.
-    /// </summary>
     private void HandleInput()
     {
         if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W))
@@ -119,47 +110,61 @@ public class PacmanController : MonoBehaviour
 
     // ─── Movement ─────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Attempts to apply the queued direction, falls back to current direction.
-    /// Pacman cannot move through walls.
-    /// </summary>
     private void Move()
     {
-        // Try to turn into the queued direction first
-        if (queuedDirection != Vector2.zero && CanMove(queuedDirection))
+        Vector2 pos = rb.position;
+
+        if (IsAtCellCenter(pos))
         {
-            currentDirection = queuedDirection;
+            pos = WorldToCellCenter(pos);
+            rb.position = pos;
+
+            if (queuedDirection != Vector2.zero && CanMove(queuedDirection))
+            {
+                currentDirection = queuedDirection;
+            }
+
+            if (currentDirection != Vector2.zero && !CanMove(currentDirection))
+            {
+                currentDirection = Vector2.zero;
+            }
         }
 
-        // Continue in currentDirection if possible
-        if (currentDirection != Vector2.zero && CanMove(currentDirection))
+        if (currentDirection != Vector2.zero)
         {
             rb.MovePosition(rb.position + currentDirection * moveSpeed * Time.fixedDeltaTime);
         }
         else
         {
-            // Hit a wall — stop smoothly
             rb.velocity = Vector2.zero;
         }
     }
 
-    /// <summary>
-    /// Casts a small box in the desired direction to check for walls.
-    /// Uses tileSize so it works at any scale.
-    /// </summary>
     private bool CanMove(Vector2 direction)
     {
-        // Offset the check origin slightly ahead of Pacman's center
-        Vector2 origin = rb.position + direction * (tileSize * 0.5f);
-        Vector2 size = Vector2.one * (tileSize * 0.4f); // slightly smaller than tile
+        Vector2 center = WorldToCellCenter(rb.position);
+        Vector2 checkPos = center + direction * tileSize;
+        Vector2 checkSize = Vector2.one * (tileSize * 0.3f);
 
-        RaycastHit2D hit = Physics2D.BoxCast(origin, size, 0f, direction, tileSize * 0.1f, wallLayer);
-        return hit.collider == null;
+        Collider2D hit = Physics2D.OverlapBox(checkPos, checkSize, 0f, wallLayer);
+        return hit == null;
+    }
+
+    private Vector2 WorldToCellCenter(Vector2 pos)
+    {
+        float x = Mathf.Round((pos.x - gridOffset.x) / tileSize) * tileSize + gridOffset.x;
+        float y = Mathf.Round((pos.y - gridOffset.y) / tileSize) * tileSize + gridOffset.y;
+        return new Vector2(x, y);
+    }
+
+    private bool IsAtCellCenter(Vector2 pos)
+    {
+        Vector2 center = WorldToCellCenter(pos);
+        return Vector2.Distance(pos, center) < turnTolerance;
     }
 
     // ─── Power-Up ─────────────────────────────────────────────────────────
 
-    /// <summary>Call this when Pacman eats a large (power) pellet.</summary>
     public void ActivatePowerUp()
     {
         IsPoweredUp = true;
@@ -181,41 +186,39 @@ public class PacmanController : MonoBehaviour
 
     // ─── Scoring ──────────────────────────────────────────────────────────
 
-    /// <summary>Add points (regular pellet, ghost eat, fruit, etc.).</summary>
     public void AddScore(int amount)
     {
-        Score += amount;
+        float multiplier = PlayerUpgrades.Instance != null ? PlayerUpgrades.Instance.ScoreMultiplier : 1f;
+        int finalAmount = Mathf.RoundToInt(amount * multiplier);
+
+        Score += finalAmount;
+        CurrencyManager.Instance?.AddPoints(finalAmount);
         OnScoreChanged?.Invoke(Score);
+        HUDManager.Instance?.ShowScorePopup(finalAmount, transform.position);
     }
 
-    /// <summary>Add fruit currency (unlocked via upgrade).</summary>
     public void AddFruitCurrency(int amount)
     {
         FruitCurrency += amount;
-        // Notify HUD via event or GameManager as needed
+        CurrencyManager.Instance?.AddFruitCurrency(amount);
     }
 
     // ─── Damage / Lives ───────────────────────────────────────────────────
 
-    /// <summary>
-    /// Called when Pacman touches a non-frightened ghost.
-    /// Subtracts a life; triggers game-over if none remain.
-    /// </summary>
     public void TakeHit()
     {
-        if (invincibilityTimer > 0f) return;   // still invincible, ignore
+        if (invincibilityTimer > 0f) return;
 
         CurrentLives--;
         OnLivesChanged?.Invoke(CurrentLives);
+        Debug.Log("Took Hit! Lives remaining: " + CurrentLives);
 
         if (CurrentLives <= 0)
         {
-            // Zero lives → game over → upgrade screen
             OnPlayerDied?.Invoke();
         }
         else
         {
-            // Brief invincibility, then respawn in same scene
             invincibilityTimer = INVINCIBILITY_DURATION;
             RespawnInPlace();
         }
@@ -223,21 +226,20 @@ public class PacmanController : MonoBehaviour
 
     private void RespawnInPlace()
     {
-        // Stop movement and reset direction
         currentDirection = Vector2.zero;
         queuedDirection = Vector2.zero;
         rb.velocity = Vector2.zero;
 
-        // Disable collider briefly so Pacman doesn't instantly re-collide
-        GetComponent<Collider2D>().enabled = false;
-        Invoke(nameof(ReenableCollider), INVINCIBILITY_DURATION * 0.75f);
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
 
-        // Optionally play death animation here before re-enable
+        Invoke(nameof(ReenableCollider), INVINCIBILITY_DURATION * 0.75f);
     }
 
     private void ReenableCollider()
     {
-        GetComponent<Collider2D>().enabled = true;
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = true;
     }
 
     private void UpdateInvincibility()
@@ -250,6 +252,7 @@ public class PacmanController : MonoBehaviour
 
     private void UpdateAnimation()
     {
+        if (animator == null) return;
         animator.SetFloat(AnimDirX, currentDirection.x);
         animator.SetFloat(AnimDirY, currentDirection.y);
         animator.SetBool(AnimPowered, IsPoweredUp);
@@ -259,40 +262,39 @@ public class PacmanController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Pellets, power pellets, fruits, and ghost eating are handled here.
-        // Tag-based dispatch — set these tags on your prefabs in Unity.
-
         switch (other.tag)
         {
             case "Pellet":
                 other.gameObject.SetActive(false);
-                AddScore(10); // base value; multiplied by upgrade in GameManager
-                // GameManager.Instance.OnPelletEaten() tracks remaining count
+                AddScore(10);
+                GameManager.Instance?.OnPelletEaten();
                 break;
 
             case "PowerPellet":
                 other.gameObject.SetActive(false);
                 ActivatePowerUp();
                 AddScore(50);
+                GameManager.Instance?.OnPelletEaten();
                 break;
 
             case "Fruit":
                 other.gameObject.SetActive(false);
-                AddScore(100);        // tweak per fruit type
+                AddScore(100);
                 AddFruitCurrency(1);
+                HUDManager.Instance?.UpdateFruitCurrency(
+                    CurrencyManager.Instance != null ? CurrencyManager.Instance.FruitCurrency : FruitCurrency);
                 break;
 
             case "Ghost":
                 GhostController ghost = other.GetComponent<GhostController>();
                 if (ghost == null) break;
 
-                if (IsPoweredUp && ghost.IsFrightened)
+                if (IsPoweredUp && ghost.CanBeEaten)
                 {
-                    // Eat the ghost
                     ghost.OnEaten();
-                    AddScore(200);    // escalating value can be tracked in GameManager
+                    AddScore(200);
                 }
-                else if (!ghost.IsFrightened && !ghost.IsEaten)
+                else if (!ghost.IsEaten)
                 {
                     TakeHit();
                 }
@@ -301,7 +303,6 @@ public class PacmanController : MonoBehaviour
     }
 
     // ─── Upgrade Hooks ────────────────────────────────────────────────────
-    // Call these from your UpgradeManager after the player selects an upgrade.
 
     public void UpgradeMoveSpeed(float bonus) => moveSpeed += bonus;
     public void UpgradePowerDuration(float bonus) => powerUpDuration += bonus;

@@ -8,7 +8,10 @@ public class Pellet : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            FindObjectOfType<PacmanController>().AddScore(pointValue);
+            testMove player = other.GetComponent<testMove>();
+            if (player == null) return;
+
+            player.AddScore(pointValue);
             GameManager.Instance.OnPelletEaten();
             gameObject.SetActive(false);
         }

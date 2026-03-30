@@ -47,6 +47,9 @@ public class HUDManager : MonoBehaviour
     public GameObject scorePopupPrefab;
     public Canvas hudCanvas;
 
+    [Header("Win Screen")]
+    public GameObject winPanel;
+
     private int currentScore = 0;
     private int highScore = 0;
     private float powerUpMaxDuration = 8f;
@@ -63,18 +66,22 @@ public class HUDManager : MonoBehaviour
 
     private void OnEnable()
     {
-        PacmanController.OnScoreChanged += UpdateScore;
-        PacmanController.OnLivesChanged += UpdateLives;
-        PacmanController.OnPowerUpStart += OnPowerUpStart;
-        PacmanController.OnPowerUpEnd += OnPowerUpEnd;
+        testMove.OnScoreChanged += UpdateScore;
+        testMove.OnLivesChanged += UpdateLives;
+        testMove.OnPowerUpStart += OnPowerUpStart;
+        testMove.OnPowerUpEnd += OnPowerUpEnd;
+        CurrencyManager.OnFruitCurrencyChanged += UpdateFruitCurrency;
+        CurrencyManager.OnFruitUnlocked += RefreshFruitVisibility;
     }
 
     private void OnDisable()
     {
-        PacmanController.OnScoreChanged -= UpdateScore;
-        PacmanController.OnLivesChanged -= UpdateLives;
-        PacmanController.OnPowerUpStart -= OnPowerUpStart;
-        PacmanController.OnPowerUpEnd -= OnPowerUpEnd;
+        testMove.OnScoreChanged -= UpdateScore;
+        testMove.OnLivesChanged -= UpdateLives;
+        testMove.OnPowerUpStart -= OnPowerUpStart;
+        testMove.OnPowerUpEnd -= OnPowerUpEnd;
+        CurrencyManager.OnFruitCurrencyChanged -= UpdateFruitCurrency;
+        CurrencyManager.OnFruitUnlocked -= RefreshFruitVisibility;
     }
 
     private void Start()
@@ -101,13 +108,14 @@ public class HUDManager : MonoBehaviour
     // ---- Public Init --------------------------------------------------------
 
     /// <summary>Call from GameManager when a new game/level starts.</summary>
-    public void InitHUD(int lives, int level, float timerDuration, bool fruitUnlocked)
+    public void InitHUD(int lives, int level, float timerDuration, bool fruitUnlocked, int fruitAmount)
     {
         BuildLivesDisplay(lives);
         SetLevel(level);
         SetTimerDisplay(timerDuration);
-        fruitCurrencyText.transform.parent.gameObject.SetActive(fruitUnlocked);
-        UpdateFruitCurrency(0);
+        RefreshFruitVisibility();
+        UpdateFruitCurrency(fruitAmount);
+        if (winPanel != null) winPanel.SetActive(false);
     }
 
     // ---- Score --------------------------------------------------------------
@@ -208,6 +216,14 @@ public class HUDManager : MonoBehaviour
         if (fruitCurrencyText != null) fruitCurrencyText.text = "x" + amount;
     }
 
+    private void RefreshFruitVisibility()
+    {
+        if (fruitCurrencyText == null || fruitCurrencyText.transform.parent == null) return;
+
+        bool fruitVisible = CurrencyManager.Instance != null && CurrencyManager.Instance.FruitUnlocked;
+        fruitCurrencyText.transform.parent.gameObject.SetActive(fruitVisible);
+    }
+
     // ---- Power-Up Bar -------------------------------------------------------
 
     private void OnPowerUpStart()
@@ -227,4 +243,10 @@ public class HUDManager : MonoBehaviour
 
     /// <summary>Call this when the player upgrades power-up duration.</summary>
     public void SetPowerUpMaxDuration(float duration) => powerUpMaxDuration = duration;
+
+    public void ShowWinScreen()
+    {
+        if (winPanel != null)
+            winPanel.SetActive(true);
+    }
 }
