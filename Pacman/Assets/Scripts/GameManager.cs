@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     public int testStartFruit = 0;
 
     [Header("Game Settings")]
-    public float startingTimerDuration = 10f;
+    public float startingTimerDuration = 60f; // Set this to your desired time limit
     public int startingLives = 3;
 
     [Header("Scene Names")]
@@ -33,11 +33,9 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        // Make sure these match the Inspector values immediately
         CurrentLevel = testStartLevel;
         CurrentTimerDuration = startingTimerDuration;
-
-        if (testStartPoints > 0 || testStartFruit > 0)
-            StartCoroutine(AddTestCurrencies());
     }
 
     private void OnEnable() { testMove.OnPlayerDied += HandlePlayerDied; }
@@ -53,7 +51,9 @@ public class GameManager : MonoBehaviour
 
     private void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        Debug.Log("Scene Loaded: " + scene.name); // Check if this matches gameSceneName
         if (scene.name != gameSceneName) return;
+
         SceneManager.sceneLoaded -= OnGameSceneLoaded;
         InitLevel();
     }
@@ -65,33 +65,38 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator DelayedInit()
     {
-        // Wait a small moment to ensure all spawned pellets are registered
         yield return new WaitForSeconds(0.1f);
 
         pelletsRemaining = GameObject.FindGameObjectsWithTag("Pellet").Length
                          + GameObject.FindGameObjectsWithTag("PowerPellet").Length;
 
-        Debug.Log($"<color=yellow>Level Initialized.</color> Total pellets found: {pelletsRemaining}");
-
         testMove pacman = FindObjectOfType<testMove>();
         int lives = pacman != null ? pacman.CurrentLives : startingLives;
 
-        // Initialize HUD
+        Time.timeScale = 1f;
+
         ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
 
-        StopAllCoroutines();
+        // REMOVE StopAllCoroutines(); <--- This was killing the script here
         StartCoroutine(RunTimer());
     }
 
     private IEnumerator RunTimer()
     {
+        Debug.Log("Timer Coroutine Started with: " + CurrentTimerDuration);
         timerRunning = true;
         timerRemaining = CurrentTimerDuration;
 
         while (timerRemaining > 0f && timerRunning)
         {
             timerRemaining -= Time.deltaTime;
-            // ManageHUD.Instance?.SetTimerDisplay(timerRemaining); 
+
+            // This is the bridge between the two scripts
+            if (ManageHUD.Instance != null)
+            {
+                ManageHUD.Instance.SetTimerDisplay(timerRemaining);
+            }
+
             yield return null;
         }
 
@@ -108,70 +113,68 @@ public class GameManager : MonoBehaviour
     {
         pelletsRemaining--;
 
-        // Log the current count
-        Debug.Log($"Pellet Eaten! Logic says {pelletsRemaining} left.");
-
-        // SAFETY CHECK: If logic thinks we are done, OR if the scene actually has 0 pellets
+        // If count is low, do a physical check to prevent "1 pellet left" bugs
         if (pelletsRemaining <= 1)
         {
-            // Double check the actual scene objects to be 100% sure
-            int actualCount = GameObject.FindGameObjectsWithTag("Pellet").Length +
-                              GameObject.FindGameObjectsWithTag("PowerPellet").Length;
+            int actual = GameObject.FindGameObjectsWithTag("Pellet").Length +
+                         GameObject.FindGameObjectsWithTag("PowerPellet").Length;
 
-            if (actualCount == 0)
+            // We count active ones only
+            int activeActual = 0;
+            foreach (var p in GameObject.FindGameObjectsWithTag("Pellet")) if (p.activeInHierarchy) activeActual++;
+            foreach (var p in GameObject.FindGameObjectsWithTag("PowerPellet")) if (p.activeInHierarchy) activeActual++;
+
+            if (activeActual == 0)
             {
-                Debug.Log("<color=cyan>Win condition confirmed!</color>");
                 WinLevel();
+                return;
             }
-            else
-            {
-                // This fixes the count if it got out of sync
-                pelletsRemaining = actualCount;
-                Debug.LogWarning($"Count was out of sync! Adjusted to actual: {actualCount}");
-            }
+            pelletsRemaining = activeActual;
         }
+
+        Debug.Log($"Pellet Eaten! {pelletsRemaining} left.");
     }
 
     private void WinLevel()
     {
         StopTimer();
-
         if (ManageHUD.Instance != null)
         {
             ManageHUD.Instance.ShowWinScreen();
-            Time.timeScale = 0f; // Freeze game play
+            Time.timeScale = 0f;
         }
-        else
-        {
-            Debug.LogError("FATAL: ManageHUD.Instance is null! Make sure ManageHUD is in the scene.");
-            // Fallback so the game doesn't get stuck
-            ProceedToUpgrades();
-        }
+    }
+
+    private void HandleTimeOut()
+    {
+        StopTimer();
+        // Show Lose Screen via HUD
+        ManageHUD.Instance?.ShowLoseScreen();
+        Time.timeScale = 0f;
     }
 
     private void HandlePlayerDied()
     {
         StopTimer();
-        GoToUpgradeScreen();
+        // You can choose to show Lose Screen or go straight to Upgrades
+        ManageHUD.Instance?.ShowLoseScreen();
     }
 
-    private void HandleTimeOut() => GoToUpgradeScreen();
-
-    // IMPORTANT: This should be called by the Button on your Win Screen
     public void ProceedToUpgrades()
     {
-        Time.timeScale = 1f; // Unfreeze the game!
+        Time.timeScale = 1f;
         CurrentLevel++;
         GoToUpgradeScreen();
     }
 
-    public void GoToUpgradeScreen() => SceneManager.LoadScene(upgradeSceneName);
-
-    public void OnUpgradesApplied()
+    // Called by a "Retry" button on your Lose Screen
+    public void RestartLevel()
     {
-        SceneManager.LoadScene(gameSceneName);
-        SceneManager.sceneLoaded += OnGameSceneLoaded;
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
+    public void GoToUpgradeScreen() => SceneManager.LoadScene(upgradeSceneName);
 
     private IEnumerator AddTestCurrencies()
     {
