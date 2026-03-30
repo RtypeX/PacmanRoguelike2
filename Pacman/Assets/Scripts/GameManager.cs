@@ -112,7 +112,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Pellet Eaten! Logic says {pelletsRemaining} left.");
 
         // SAFETY CHECK: If logic thinks we are done, OR if the scene actually has 0 pellets
-        if (pelletsRemaining <= 0)
+        if (pelletsRemaining <= 1)
         {
             // Double check the actual scene objects to be 100% sure
             int actualCount = GameObject.FindGameObjectsWithTag("Pellet").Length +
