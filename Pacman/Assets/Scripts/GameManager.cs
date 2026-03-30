@@ -6,7 +6,6 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-
     [Header("Testing")]
     public int testStartLevel = 1;
     public int testStartPoints = 0;
@@ -30,23 +29,19 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        CurrentLevel = testStartLevel;
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
         CurrentLevel = testStartLevel;
+        CurrentTimerDuration = startingTimerDuration;
 
-        // Add test currencies after a frame so PlayerUpgrades has time to initialize
         if (testStartPoints > 0 || testStartFruit > 0)
             StartCoroutine(AddTestCurrencies());
     }
 
-    private void OnEnable() { PacmanController.OnPlayerDied += HandlePlayerDied; }
-    private void OnDisable() { PacmanController.OnPlayerDied -= HandlePlayerDied; }
+    private void OnEnable() { testMove.OnPlayerDied += HandlePlayerDied; }
+    private void OnDisable() { testMove.OnPlayerDied -= HandlePlayerDied; }
 
     public void StartGame()
     {
@@ -65,12 +60,26 @@ public class GameManager : MonoBehaviour
 
     private void InitLevel()
     {
+        StartCoroutine(DelayedInit());
+    }
+
+    private IEnumerator DelayedInit()
+    {
+        // Wait a small moment to ensure all spawned pellets are registered
+        yield return new WaitForSeconds(0.1f);
+
         pelletsRemaining = GameObject.FindGameObjectsWithTag("Pellet").Length
                          + GameObject.FindGameObjectsWithTag("PowerPellet").Length;
 
-        PacmanController pacman = FindObjectOfType<PacmanController>();
+        Debug.Log($"<color=yellow>Level Initialized.</color> Total pellets found: {pelletsRemaining}");
+
+        testMove pacman = FindObjectOfType<testMove>();
         int lives = pacman != null ? pacman.CurrentLives : startingLives;
-        HUDManager.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
+
+        // Initialize HUD
+        ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
+
+        StopAllCoroutines();
         StartCoroutine(RunTimer());
     }
 
@@ -82,27 +91,67 @@ public class GameManager : MonoBehaviour
         while (timerRemaining > 0f && timerRunning)
         {
             timerRemaining -= Time.deltaTime;
-            HUDManager.Instance?.SetTimerDisplay(timerRemaining);
+            // ManageHUD.Instance?.SetTimerDisplay(timerRemaining); 
             yield return null;
         }
 
-        if (timerRunning) { timerRunning = false; GoToUpgradeScreen(); }
+        if (timerRunning)
+        {
+            timerRunning = false;
+            HandleTimeOut();
+        }
     }
 
     public void StopTimer() => timerRunning = false;
 
-    // Call this from PacmanController each time a pellet is eaten
     public void OnPelletEaten()
     {
         pelletsRemaining--;
-        if (pelletsRemaining <= 0) { StopTimer(); CurrentLevel++; GoToUpgradeScreen(); }
+
+        Debug.Log($"<color=green>Pellet Eaten!</color> {pelletsRemaining} left.");
+
+        if (pelletsRemaining <= 0)
+        {
+            Debug.Log("<color=cyan>Win condition met!</color> Triggering Win Screen.");
+            WinLevel();
+        }
     }
 
-    private void HandlePlayerDied() { StopTimer(); GoToUpgradeScreen(); }
+    private void WinLevel()
+    {
+        StopTimer();
 
-    private void GoToUpgradeScreen() => SceneManager.LoadScene(upgradeSceneName);
+        if (ManageHUD.Instance != null)
+        {
+            ManageHUD.Instance.ShowWinScreen();
+            Time.timeScale = 0f; // Freeze game play
+        }
+        else
+        {
+            Debug.LogError("FATAL: ManageHUD.Instance is null! Make sure ManageHUD is in the scene.");
+            // Fallback so the game doesn't get stuck
+            ProceedToUpgrades();
+        }
+    }
 
-    // Upgrade hooks - call from UpgradeManager after player picks upgrades
+    private void HandlePlayerDied()
+    {
+        StopTimer();
+        GoToUpgradeScreen();
+    }
+
+    private void HandleTimeOut() => GoToUpgradeScreen();
+
+    // IMPORTANT: This should be called by the Button on your Win Screen
+    public void ProceedToUpgrades()
+    {
+        Time.timeScale = 1f; // Unfreeze the game!
+        CurrentLevel++;
+        GoToUpgradeScreen();
+    }
+
+    public void GoToUpgradeScreen() => SceneManager.LoadScene(upgradeSceneName);
+
     public void OnUpgradesApplied()
     {
         SceneManager.LoadScene(gameSceneName);
@@ -111,17 +160,11 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator AddTestCurrencies()
     {
-        // Wait for PlayerUpgrades to be ready
         yield return new WaitUntil(() => PlayerUpgrades.Instance != null);
-
-        if (testStartPoints > 0)
-            PlayerUpgrades.Instance.AddPoints(testStartPoints);
-
-        if (testStartFruit > 0)
-            PlayerUpgrades.Instance.AddFruitCurrency(testStartFruit);
+        if (testStartPoints > 0) PlayerUpgrades.Instance.AddPoints(testStartPoints);
+        if (testStartFruit > 0) PlayerUpgrades.Instance.AddFruitCurrency(testStartFruit);
     }
 
     public void UpgradeTimerDuration(float bonus) => CurrentTimerDuration += bonus;
     public void UnlockFruit() => fruitUnlocked = true;
-    public void ShowScorePopup(int amount, Vector3 worldPos) => HUDManager.Instance?.ShowScorePopup(amount, worldPos);
 }
