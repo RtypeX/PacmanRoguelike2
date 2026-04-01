@@ -303,6 +303,7 @@ public class testMove : MonoBehaviour
                 }
                 else if (!ghost.IsEaten)
                 {
+                    animator.SetTrigger("Die");
                     TakeHit();
                 }
                 break;
