@@ -889,6 +889,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1250725075}
   - component: {fileID: 1250725074}
+  - component: {fileID: 1250725077}
+  - component: {fileID: 1250725076}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -905,15 +907,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1250725073}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6eaa5cb12629d3488e9562f571578d0, type: 3}
+  m_Script: {fileID: 11500000, guid: a5743c2b73279ad46aae722b71cee121, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   testStartLevel: 2
-  testStartPoints: 1000
-  testStartFruit: 10
-  startingTimerDuration: 300
+  testStartPoints: 0
+  testStartFruit: 0
+  startingTimerDuration: 60
   startingLives: 3
-  powerPelletPrefab: {fileID: 0}
+  powerPelletPrefab: {fileID: 2845381662289636116, guid: 04d744db389a70541a9064ae9b053647, type: 3}
   bonusPelletSpawnPoints: []
   gameSceneName: Level 0
   upgradeSceneName: UpgradeScene
@@ -932,6 +934,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1250725076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250725073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae447426c4f0a214a8989becf6c935cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1250725077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250725073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04f4dc62254f5a143a23ec2b92c73290, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1424026767
 GameObject:
   m_ObjectHideFlags: 0

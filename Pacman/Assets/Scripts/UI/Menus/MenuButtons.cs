@@ -32,10 +32,25 @@ public class MenuButtons : MonoBehaviour
         startButton?.onClick.AddListener(() =>
         {
             cachedGameManager = GetOrCreateGameManager();
+
             if (cachedGameManager != null)
-                cachedGameManager.StartGame();
+            {
+                // LOGIC CHANGE: 
+                // If the player is on Level 1, it's a "New Game" (Reset).
+                // If CurrentLevel is 2 or higher, they are returning from the shop (Don't Reset).
+                if (cachedGameManager.CurrentLevel == 1)
+                {
+                    cachedGameManager.StartGame();
+                }
+                else
+                {
+                    cachedGameManager.LoadLevelFromMenu();
+                }
+            }
             else
+            {
                 SceneManager.LoadScene("Level 0");
+            }
         });
         settingsButton?.onClick.AddListener(() => SceneManager.LoadScene("SettingsScene"));
         quitButton?.onClick.AddListener(() => Application.Quit());

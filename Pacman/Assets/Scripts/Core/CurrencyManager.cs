@@ -8,6 +8,10 @@ public class CurrencyManager : MonoBehaviour
 {
     public static CurrencyManager Instance { get; private set; }
 
+    [Header("Starting Balances")]
+    public int startingPoints = 1000;
+    public int startingFruitCurrency = 5;
+
     // Points - earned from pellets, ghosts, fruits
     public int Points { get; private set; } = 0;
 
@@ -27,6 +31,10 @@ public class CurrencyManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Apply starting values
+        Points = startingPoints;
+        FruitCurrency = startingFruitCurrency;
     }
 
     // ---- Points -------------------------------------------------------------
@@ -64,6 +72,7 @@ public class CurrencyManager : MonoBehaviour
 
     public void UnlockFruit()
     {
+        if (FruitUnlocked) return;
         FruitUnlocked = true;
         OnFruitUnlocked?.Invoke();
         GameManager.Instance?.UnlockFruit();
@@ -73,8 +82,9 @@ public class CurrencyManager : MonoBehaviour
 
     public void ResetForNewRun()
     {
-        Points = 0;
-        FruitCurrency = 0;
+        // When resetting, we go back to the starting values set in inspector
+        Points = startingPoints;
+        FruitCurrency = startingFruitCurrency;
         FruitUnlocked = false;
         OnPointsChanged?.Invoke(Points);
         OnFruitCurrencyChanged?.Invoke(FruitCurrency);

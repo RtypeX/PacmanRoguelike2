@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [Header("Testing")]
-    public int testStartLevel = 1;
+    public int testStartLevel = 2;
     public int testStartPoints = 0;
     public int testStartFruit = 0;
 
@@ -33,7 +33,6 @@ public class GameManager : MonoBehaviour
     private bool fruitUnlocked = false;
     private Coroutine timerCoroutine;
     private bool levelInitialized = false;
-    private bool launchedFromStartGame = false;
     private int bonusPowerPelletCount = 0;
     private float ghostFreezeDuration = 0f;
 
@@ -68,17 +67,30 @@ public class GameManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnGameSceneLoaded;
     }
 
+    // --- CALL THIS FOR A COMPLETELY NEW SAVE ---
     public void StartGame()
     {
         CurrencyManager.Instance?.ResetForNewRun();
         PlayerUpgrades.Instance?.ResetUpgrades();
 
-        launchedFromStartGame = true;
         CurrentLevel = 1;
         CurrentTimerDuration = startingTimerDuration;
         fruitUnlocked = false;
         bonusPowerPelletCount = 0;
         ghostFreezeDuration = 0f;
+
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+    // --- CALL THIS FROM THE MAIN MENU IF THEY JUST CAME FROM THE SHOP ---
+    public void LoadLevelFromMenu()
+    {
+        // Reset state so old level data doesn't carry over
+        levelInitialized = false;
+        pelletsRemaining = 999; // Set to a high number so check doesn't trigger 0 instantly
+        timerRunning = false;
+
+        Time.timeScale = 1f;
         SceneManager.LoadScene(gameSceneName);
     }
 
@@ -91,35 +103,66 @@ public class GameManager : MonoBehaviour
     private void InitLevel()
     {
         levelInitialized = false;
-        StopTimer(); // Clean up any old timers
+        StopTimer();
         StartCoroutine(DelayedInit());
     }
 
     private IEnumerator DelayedInit()
     {
-        yield return new WaitForSeconds(0.1f);
+        // Give the scene a moment to instantiate all objects
+        yield return new WaitForEndOfFrame();
 
+        // 1. Spawn any bonus items from upgrades
         if (bonusPowerPelletCount > 0)
             SpawnBonusPowerPellets(bonusPowerPelletCount);
 
+        // 2. COUNT PELLETS FIRST - Before we do anything else
         pelletsRemaining = GameObject.FindGameObjectsWithTag("Pellet").Length
                          + GameObject.FindGameObjectsWithTag("PowerPellet").Length;
 
+        Debug.Log($"Level Initialized. Pellets to eat: {pelletsRemaining}");
+
+        // 3. Find Player and HUD
         testMove pacman = FindObjectOfType<testMove>();
         int lives = pacman != null ? pacman.CurrentLives : startingLives;
 
         Time.timeScale = 1f;
 
-        // Reset HUD
         ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
-        ManageHUD.Instance?.SetPowerUpMaxDuration(pacman != null ? pacman.powerUpDuration : 8f);
+
+        if (pacman != null)
+            ManageHUD.Instance?.SetPowerUpMaxDuration(pacman.powerUpDuration);
 
         if (ghostFreezeDuration > 0f)
             StartCoroutine(FreezeGhosts(ghostFreezeDuration));
 
+        // 4. Start the game logic
         levelInitialized = true;
         StartTimer();
     }
+
+    public void OnPelletEaten()
+    {
+        // Don't check for win if the level is still setting up
+        if (!levelInitialized) return;
+
+        pelletsRemaining--;
+
+        if (pelletsRemaining <= 0)
+        {
+            WinLevel();
+        }
+    }
+
+    private void WinLevel()
+    {
+        levelInitialized = false; // Prevent double triggers
+        StopTimer();
+        ManageHUD.Instance?.ShowWinScreen();
+        Time.timeScale = 0f;
+    }
+
+    // ... (Keep your SpawnBonusPowerPellets, FreezeGhosts, and Timer methods exactly as they were)
 
     private void SpawnBonusPowerPellets(int count)
     {
@@ -166,12 +209,8 @@ public class GameManager : MonoBehaviour
         while (timerRemaining > 0f && timerRunning)
         {
             timerRemaining -= Time.deltaTime;
-
-            // Bridge to HUD: SetTimerDisplay should handle the 00:00 formatting
             if (ManageHUD.Instance != null)
-            {
                 ManageHUD.Instance.SetTimerDisplay(timerRemaining);
-            }
 
             yield return null;
         }
@@ -190,35 +229,6 @@ public class GameManager : MonoBehaviour
         {
             StopCoroutine(timerCoroutine);
             timerCoroutine = null;
-        }
-    }
-
-    public void OnPelletEaten()
-    {
-        pelletsRemaining--;
-
-        if (pelletsRemaining <= 1)
-        {
-            int activeActual = 0;
-            foreach (var p in GameObject.FindGameObjectsWithTag("Pellet")) if (p.activeInHierarchy) activeActual++;
-            foreach (var p in GameObject.FindGameObjectsWithTag("PowerPellet")) if (p.activeInHierarchy) activeActual++;
-
-            if (activeActual == 0)
-            {
-                WinLevel();
-                return;
-            }
-            pelletsRemaining = activeActual;
-        }
-    }
-
-    private void WinLevel()
-    {
-        StopTimer();
-        if (ManageHUD.Instance != null)
-        {
-            ManageHUD.Instance.ShowWinScreen();
-            Time.timeScale = 0f;
         }
     }
 
