@@ -15,6 +15,8 @@ public class MenuButtons : MonoBehaviour
     [Header("Lock Notification")]
     public TextMeshProUGUI playFirstNotification;
 
+    private GameManager cachedGameManager;
+
     private void Start()
     {
 
@@ -25,7 +27,16 @@ public class MenuButtons : MonoBehaviour
 
         playFirstNotification?.gameObject.SetActive(false);
 
-        startButton?.onClick.AddListener(() => GameManager.Instance.StartGame());
+        cachedGameManager = GetOrCreateGameManager();
+
+        startButton?.onClick.AddListener(() =>
+        {
+            cachedGameManager = GetOrCreateGameManager();
+            if (cachedGameManager != null)
+                cachedGameManager.StartGame();
+            else
+                SceneManager.LoadScene("Level 0");
+        });
         settingsButton?.onClick.AddListener(() => SceneManager.LoadScene("SettingsScene"));
         quitButton?.onClick.AddListener(() => Application.Quit());
 
@@ -37,7 +48,8 @@ public class MenuButtons : MonoBehaviour
 
     private void TryOpenUpgrades()
     {
-        bool hasPlayedLevel = GameManager.Instance == null || GameManager.Instance.CurrentLevel > 1;
+        cachedGameManager = GetOrCreateGameManager();
+        bool hasPlayedLevel = cachedGameManager == null || cachedGameManager.CurrentLevel > 1;
 
         if (!hasPlayedLevel)
         {
@@ -52,7 +64,8 @@ public class MenuButtons : MonoBehaviour
     {
         if (upgradesButton == null) return;
 
-        bool hasPlayedLevel = GameManager.Instance == null || GameManager.Instance.CurrentLevel > 1;
+        cachedGameManager = GetOrCreateGameManager();
+        bool hasPlayedLevel = cachedGameManager == null || cachedGameManager.CurrentLevel > 1;
 
         // Grey out the button visually if locked
         ColorBlock colors = upgradesButton.colors;
@@ -93,5 +106,18 @@ public class MenuButtons : MonoBehaviour
         }
 
         playFirstNotification.gameObject.SetActive(false);
+    }
+
+    private GameManager GetOrCreateGameManager()
+    {
+        if (GameManager.Instance != null)
+            return GameManager.Instance;
+
+        GameManager existing = FindObjectOfType<GameManager>();
+        if (existing != null)
+            return existing;
+
+        GameObject gameManagerObject = new GameObject("GameManager");
+        return gameManagerObject.AddComponent<GameManager>();
     }
 }

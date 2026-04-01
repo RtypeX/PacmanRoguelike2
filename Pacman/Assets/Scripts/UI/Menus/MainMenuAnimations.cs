@@ -42,8 +42,12 @@ public class MainMenuAnimations : MonoBehaviour
 
     private void Start()
     {
+        if (parentCanvas == null)
+            parentCanvas = GetComponentInParent<Canvas>() ?? FindObjectOfType<Canvas>();
+
         SetupButtonHovers();
-        StartCoroutine(SlideButtonsIn());
+        if (parentCanvas != null)
+            StartCoroutine(SlideButtonsIn());
 
         if (titleText != null)
             StartCoroutine(PulseTitle());
@@ -68,6 +72,8 @@ public class MainMenuAnimations : MonoBehaviour
 
     private IEnumerator SlideButtonsIn()
     {
+        if (parentCanvas == null)
+            yield break;
 
         // Create invisible blocker over entire canvas to eat all hover events
         slideBlocker = new GameObject("SlideBlocker");

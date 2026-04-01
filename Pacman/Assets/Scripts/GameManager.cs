@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     public int testStartFruit = 0;
 
     [Header("Game Settings")]
-    public float startingTimerDuration = 60f; // Set this to your desired time limit
+    public float startingTimerDuration = 60f;
     public int startingLives = 3;
 
     [Header("Power Pellet Spawning")]
@@ -43,7 +43,6 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Make sure these match the Inspector values immediately
         CurrentLevel = testStartLevel;
         CurrentTimerDuration = startingTimerDuration;
 
@@ -92,6 +91,7 @@ public class GameManager : MonoBehaviour
     private void InitLevel()
     {
         levelInitialized = false;
+        StopTimer(); // Clean up any old timers
         StartCoroutine(DelayedInit());
     }
 
@@ -110,6 +110,7 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1f;
 
+        // Reset HUD
         ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
         ManageHUD.Instance?.SetPowerUpMaxDuration(pacman != null ? pacman.powerUpDuration : 8f);
 
@@ -166,7 +167,7 @@ public class GameManager : MonoBehaviour
         {
             timerRemaining -= Time.deltaTime;
 
-            // This is the bridge between the two scripts
+            // Bridge to HUD: SetTimerDisplay should handle the 00:00 formatting
             if (ManageHUD.Instance != null)
             {
                 ManageHUD.Instance.SetTimerDisplay(timerRemaining);
@@ -175,7 +176,7 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
 
-        if (timerRunning)
+        if (timerRunning && timerRemaining <= 0)
         {
             timerRunning = false;
             HandleTimeOut();
@@ -185,7 +186,6 @@ public class GameManager : MonoBehaviour
     public void StopTimer()
     {
         timerRunning = false;
-
         if (timerCoroutine != null)
         {
             StopCoroutine(timerCoroutine);
@@ -197,13 +197,8 @@ public class GameManager : MonoBehaviour
     {
         pelletsRemaining--;
 
-        // If count is low, do a physical check to prevent "1 pellet left" bugs
         if (pelletsRemaining <= 1)
         {
-            int actual = GameObject.FindGameObjectsWithTag("Pellet").Length +
-                         GameObject.FindGameObjectsWithTag("PowerPellet").Length;
-
-            // We count active ones only
             int activeActual = 0;
             foreach (var p in GameObject.FindGameObjectsWithTag("Pellet")) if (p.activeInHierarchy) activeActual++;
             foreach (var p in GameObject.FindGameObjectsWithTag("PowerPellet")) if (p.activeInHierarchy) activeActual++;
@@ -215,8 +210,6 @@ public class GameManager : MonoBehaviour
             }
             pelletsRemaining = activeActual;
         }
-
-        Debug.Log($"Pellet Eaten! {pelletsRemaining} left.");
     }
 
     private void WinLevel()
@@ -242,6 +235,7 @@ public class GameManager : MonoBehaviour
         if (!levelInitialized) return;
         StopTimer();
         ManageHUD.Instance?.ShowLoseScreen();
+        Time.timeScale = 0f;
     }
 
     public void ProceedToUpgrades()
@@ -251,20 +245,18 @@ public class GameManager : MonoBehaviour
         GoToUpgradeScreen();
     }
 
-    // Called by a "Retry" button on your Lose Screen
     public void RestartLevel()
     {
         Time.timeScale = 1f;
+        StopTimer();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void GoToUpgradeScreen()
     {
-        if (!launchedFromStartGame && SceneManager.GetActiveScene().name == gameSceneName)
-            return;
-
         levelInitialized = false;
         Time.timeScale = 1f;
+        StopTimer();
         SceneManager.LoadScene(upgradeSceneName);
     }
 
