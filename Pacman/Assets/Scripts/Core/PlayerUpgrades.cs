@@ -11,6 +11,7 @@ using System.Collections.Generic;
 public class PlayerUpgrades : MonoBehaviour
 {
     public static PlayerUpgrades Instance { get; private set; }
+    private readonly Dictionary<UpgradeType, int> upgradeTiers = new Dictionary<UpgradeType, int>();
 
     // Upgrade state
     public float SpeedBonus { get; private set; } = 0f;
@@ -49,6 +50,7 @@ public class PlayerUpgrades : MonoBehaviour
         BonusLives = 0;
         BonusPowerPellets = 0;
         GhostFreezeDuration = 0f;
+        upgradeTiers.Clear();
     }
 
     // ---- Currency convenience (delegates to CurrencyManager) ---------------
@@ -81,39 +83,64 @@ public class PlayerUpgrades : MonoBehaviour
             : CurrencyManager.Instance.FruitCurrency >= upgrade.cost;
     }
 
+    public bool CanAfford(CurrencyType costType, int cost)
+    {
+        if (CurrencyManager.Instance == null) return false;
+
+        return costType == CurrencyType.Points
+            ? CurrencyManager.Instance.Points >= cost
+            : CurrencyManager.Instance.FruitCurrency >= cost;
+    }
+
+    public int GetTier(UpgradeType upgradeType)
+    {
+        return upgradeTiers.TryGetValue(upgradeType, out int tier) ? tier : 0;
+    }
+
+    public int GetTier(UpgradeData upgrade)
+    {
+        return upgrade == null ? 0 : GetTier(upgrade.upgradeType);
+    }
+
     // ---- Apply upgrade ------------------------------------------------------
 
     public void ApplyUpgrade(UpgradeData upgrade)
     {
         if (!CanAfford(upgrade)) return;
+        ApplyUpgrade(upgrade, upgrade.cost, upgrade.upgradeValue);
+    }
+
+    public void ApplyUpgrade(UpgradeData upgrade, int cost, float upgradeValue)
+    {
+        if (upgrade == null || !CanAfford(upgrade.costType, cost)) return;
 
         // Deduct cost via CurrencyManager
         if (upgrade.costType == CurrencyType.Points)
-            CurrencyManager.Instance.SpendPoints(upgrade.cost);
+            CurrencyManager.Instance.SpendPoints(cost);
         else
-            CurrencyManager.Instance.SpendFruitCurrency(upgrade.cost);
+            CurrencyManager.Instance.SpendFruitCurrency(cost);
 
         // Apply effect
         switch (upgrade.upgradeType)
         {
             case UpgradeType.TimerBonus:
-                TimerBonus += upgrade.upgradeValue;
-                GameManager.Instance?.UpgradeTimerDuration(upgrade.upgradeValue);
+                TimerBonus += upgradeValue;
+                GameManager.Instance?.UpgradeTimerDuration(upgradeValue);
                 break;
 
             case UpgradeType.ExtraLife:
-                BonusLives += (int)upgrade.upgradeValue;
-                FindObjectOfType<testMove>()?.UpgradeMaxLives((int)upgrade.upgradeValue);
+                BonusLives += (int)upgradeValue;
+                FindObjectOfType<testMove>()?.UpgradeMaxLives((int)upgradeValue);
                 break;
 
             case UpgradeType.MoveSpeedBonus:
-                SpeedBonus += upgrade.upgradeValue;
-                FindObjectOfType<testMove>()?.UpgradeMoveSpeed(upgrade.upgradeValue);
+                SpeedBonus += upgradeValue;
+                FindObjectOfType<testMove>()?.UpgradeMoveSpeed(upgradeValue);
                 break;
 
             case UpgradeType.PowerPelletDuration:
-                PowerDurationBonus += upgrade.upgradeValue;
-                FindObjectOfType<testMove>()?.UpgradePowerDuration(upgrade.upgradeValue);
+                PowerDurationBonus += upgradeValue;
+                FindObjectOfType<testMove>()?.UpgradePowerDuration(upgradeValue);
                 ManageHUD.Instance?.SetPowerUpMaxDuration(8f + PowerDurationBonus);
                 break;
 
@@ -123,20 +150,22 @@ public class PlayerUpgrades : MonoBehaviour
                 break;
 
             case UpgradeType.ScoreMultiplier:
-                ScoreMultiplier += upgrade.upgradeValue;
+                ScoreMultiplier += upgradeValue;
                 break;
 
             case UpgradeType.ExtraPowerPellets:
                 // Accumulate total bonus pellets; GameManager reads this on level init
-                BonusPowerPellets += (int)upgrade.upgradeValue;
-                GameManager.Instance?.UpgradePowerPelletCount((int)upgrade.upgradeValue);
+                BonusPowerPellets += (int)upgradeValue;
+                GameManager.Instance?.UpgradePowerPelletCount((int)upgradeValue);
                 break;
 
             case UpgradeType.GhostFreeze:
                 // Accumulate total freeze duration; GameManager applies it on level start
-                GhostFreezeDuration += upgrade.upgradeValue;
-                GameManager.Instance?.UpgradeGhostFreeze(upgrade.upgradeValue);
+                GhostFreezeDuration += upgradeValue;
+                GameManager.Instance?.UpgradeGhostFreeze(upgradeValue);
                 break;
         }
+
+        upgradeTiers[upgrade.upgradeType] = GetTier(upgrade.upgradeType) + 1;
     }
 }
