@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI; // <--- Add this!
 
 public class ManageHUD : MonoBehaviour
 {
@@ -18,6 +19,8 @@ public class ManageHUD : MonoBehaviour
     [Header("Timer")]
     public TextMeshProUGUI timerText; // Drag your Timer Text here
     private float powerUpMaxDuration = 8f;
+
+    public Button nextLevelButton;
 
     public void ShowLoseScreen()
     {
@@ -103,6 +106,15 @@ public class ManageHUD : MonoBehaviour
         {
             winPanel.SetActive(true);
             Time.timeScale = 0f;
+
+            // Find the button on the panel and tell it to call the Manager
+            Button upgradeBtn = winPanel.GetComponentInChildren<Button>();
+            // ^ Replace with your specific button variable if you have one
+
+            upgradeBtn.onClick.RemoveAllListeners(); // Clear old links
+            upgradeBtn.onClick.AddListener(() => {
+                GameManager.Instance.ProceedToUpgrades();
+            });
         }
     }
 

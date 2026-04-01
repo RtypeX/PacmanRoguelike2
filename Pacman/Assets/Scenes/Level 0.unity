@@ -5412,6 +5412,7 @@ MonoBehaviour:
   winPanel: {fileID: 1839204289}
   losePanel: {fileID: 719412687}
   timerText: {fileID: 632374479}
+  nextLevelButton: {fileID: 0}
 --- !u!1 &1349851106
 GameObject:
   m_ObjectHideFlags: 0
