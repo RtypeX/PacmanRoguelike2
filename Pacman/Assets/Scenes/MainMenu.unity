@@ -946,6 +946,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae447426c4f0a214a8989becf6c935cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startingPoints: 1000
+  startingFruitCurrency: 1212
 --- !u!114 &1250725077
 MonoBehaviour:
   m_ObjectHideFlags: 0
