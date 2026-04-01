@@ -65,22 +65,41 @@ public class testMove : MonoBehaviour
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        if (PlayerUpgrades.Instance != null)
-        {
-            moveSpeed += PlayerUpgrades.Instance.SpeedBonus;
-            powerUpDuration += PlayerUpgrades.Instance.PowerDurationBonus;
-            maxLives += PlayerUpgrades.Instance.BonusLives;
-        }
-
-        CurrentLives = maxLives;
     }
 
     private void Start()
     {
+        // 1. Apply upgrades first so the math is correct
+        ApplyPurchasedUpgrades();
+
+        // 2. Initialize UI
         OnScoreChanged?.Invoke(Score);
         OnLivesChanged?.Invoke(CurrentLives);
     }
+
+    void ApplyPurchasedUpgrades()
+    {
+        if (PlayerUpgrades.Instance == null)
+        {
+            Debug.LogError("!!! HUD/PLAYER: Cannot find PlayerUpgrades! Is it in the scene?");
+            CurrentLives = maxLives;
+            return;
+        }
+
+        // This will tell us if the value is actually saved
+        Debug.Log("Checking Upgrades... Bonus Lives found: " + PlayerUpgrades.Instance.BonusLives);
+
+        maxLives = 3 + PlayerUpgrades.Instance.BonusLives;
+        CurrentLives = maxLives;
+
+        // 3. IMPORTANT: Tell the HUD to show the new number
+        ManageHUD.Instance?.UpdateLivesUI(CurrentLives);
+
+        // Also apply speed while we are here
+        moveSpeed = 5f + PlayerUpgrades.Instance.SpeedBonus;
+        powerUpDuration = 8f + PlayerUpgrades.Instance.PowerDurationBonus;
+    }
+
 
     private void Update()
     {
@@ -195,6 +214,8 @@ public class testMove : MonoBehaviour
         Score += finalAmount;
         CurrencyManager.Instance?.AddPoints(finalAmount);
         OnScoreChanged?.Invoke(Score);
+
+        // Show the pop-up (if implemented)
         ManageHUD.Instance?.ShowScorePopup(finalAmount, transform.position);
     }
 
@@ -310,7 +331,7 @@ public class testMove : MonoBehaviour
         }
     }
 
-    // ─── Upgrade Hooks ────────────────────────────────────────────────────
+    // ─── Upgrade Hooks (Called by PlayerUpgrades during purchase) ──────────
 
     public void UpgradeMoveSpeed(float bonus) => moveSpeed += bonus;
     public void UpgradePowerDuration(float bonus) => powerUpDuration += bonus;
@@ -319,5 +340,6 @@ public class testMove : MonoBehaviour
         maxLives += bonus;
         CurrentLives = Mathf.Min(CurrentLives + bonus, maxLives);
         OnLivesChanged?.Invoke(CurrentLives);
+        ManageHUD.Instance?.UpdateLivesUI(CurrentLives);
     }
 }
