@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Pellet
   - PowerPellet
+  - Ghost
   layers:
   - Default
   - TransparentFX
@@ -13,11 +14,11 @@ TagManager:
   - Wall
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Player
+  - Walls
+  - Ghosts
+  - Pellets
+  - Nodes
   - 
   - 
   - 

@@ -55,6 +55,12 @@ public class testMove : MonoBehaviour
     public static event System.Action OnPowerUpStart;
     public static event System.Action OnPowerUpEnd;
 
+    [SerializeField]
+    private AnimatedSprite deathSequence;
+    private SpriteRenderer spriteRenderer;
+    private CircleCollider2D circleCollider;
+    private Movement movement;
+
     // ─── Unity Lifecycle ──────────────────────────────────────────────────
 
     private void Awake()
@@ -116,16 +122,38 @@ public class testMove : MonoBehaviour
 
     // ─── Input & Rotation ───────────────────────────────────────────────────
 
+    /// <summary>
+    /// Reads arrow key (or WASD) input and buffers it as queuedDirection.
+    /// The queued direction is applied as soon as the path is clear.
+    /// </summary>
     private void HandleInput()
     {
         if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W))
-            queuedDirection = Vector2.up;
+            TryQueueDirection(Vector2.up);
         else if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S))
-            queuedDirection = Vector2.down;
+            TryQueueDirection(Vector2.down);
         else if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
-            queuedDirection = Vector2.left;
+            TryQueueDirection(Vector2.left);
         else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
-            queuedDirection = Vector2.right;
+            TryQueueDirection(Vector2.right);
+    }
+
+    /// <summary>
+    /// Attempts to set queuedDirection only if the requested direction is not blocked.
+    /// This prevents players from "inputting into walls".
+    /// </summary>
+    private void TryQueueDirection(Vector2 direction)
+    {
+        // If the direction is already queued, nothing to do.
+        if (queuedDirection == direction)
+            return;
+
+        // If the requested direction is currently free of walls, queue it.
+        if (CanMove(direction))
+        {
+            queuedDirection = direction;
+        }
+        // Otherwise ignore the input (do not set queuedDirection).
     }
 
     // ─── Movement ─────────────────────────────────────────────────────────
@@ -270,6 +298,27 @@ public class testMove : MonoBehaviour
             invincibilityTimer -= Time.deltaTime;
     }
 
+    public void ResetState()
+    {
+        enabled = true;
+        spriteRenderer.enabled = true;
+        circleCollider.enabled = true;
+        deathSequence.enabled = false;
+        movement.ResetState();
+        gameObject.SetActive(true);
+    }
+
+    public void DeathSequence()
+    {
+        enabled = false;
+        spriteRenderer.enabled = false;
+        circleCollider.enabled = false;
+        movement.enabled = false;
+        deathSequence.enabled = true;
+        deathSequence.Restart();
+    }
+
+
     // ─── Animation ────────────────────────────────────────────────────────
 
     private void UpdateAnimation()
@@ -317,7 +366,7 @@ public class testMove : MonoBehaviour
                 GhostController ghost = other.GetComponent<GhostController>();
                 if (ghost == null) break;
 
-                if (IsPoweredUp && ghost.CanBeEaten)
+                if (IsPoweredUp)
                 {
                     ghost.OnEaten();
                     AddScore(200);
