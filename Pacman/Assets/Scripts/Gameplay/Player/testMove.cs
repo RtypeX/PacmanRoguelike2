@@ -45,6 +45,7 @@ public class testMove : MonoBehaviour
     private static readonly int AnimMoveX = Animator.StringToHash("MoveX");
     private static readonly int AnimMoveY = Animator.StringToHash("MoveY");
     private static readonly int AnimIsMoving = Animator.StringToHash("IsMoving");
+    private static readonly int AnimDeath = Animator.StringToHash("Death");
     private Vector2 lastDirection = Vector2.right;
 
     // ─── Events ──────────────────────────────────────────────────────────────
@@ -67,6 +68,9 @@ public class testMove : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        circleCollider = GetComponent<CircleCollider2D>();
+        movement = GetComponent<Movement>();
 
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
@@ -301,21 +305,24 @@ public class testMove : MonoBehaviour
     public void ResetState()
     {
         enabled = true;
-        spriteRenderer.enabled = true;
-        circleCollider.enabled = true;
-        deathSequence.enabled = false;
-        movement.ResetState();
+        if (spriteRenderer != null) spriteRenderer.enabled = true;
+        if (circleCollider != null) circleCollider.enabled = true;
+        if (deathSequence != null) deathSequence.enabled = false;
+        if (movement != null) movement.ResetState();
         gameObject.SetActive(true);
     }
 
     public void DeathSequence()
     {
         enabled = false;
-        spriteRenderer.enabled = false;
-        circleCollider.enabled = false;
-        movement.enabled = false;
-        deathSequence.enabled = true;
-        deathSequence.Restart();
+        if (spriteRenderer != null) spriteRenderer.enabled = false;
+        if (circleCollider != null) circleCollider.enabled = false;
+        if (movement != null) movement.enabled = false;
+        if (deathSequence != null)
+        {
+            deathSequence.enabled = true;
+            deathSequence.Restart();
+        }
     }
 
 
@@ -373,7 +380,7 @@ public class testMove : MonoBehaviour
                 }
                 else if (!ghost.IsEaten)
                 {
-                    animator.SetTrigger("Die");
+                    animator.SetTrigger(AnimDeath);
                     TakeHit();
                 }
                 break;

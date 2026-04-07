@@ -1,10 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GhostController : MonoBehaviour
 {
-    // Public conditions requested � added but intentionally inert.
+    // Public conditions requested — added but intentionally inert.
     // Visibility matches how `testMove` / `Pacman` expects to read them.
     public bool IsFrightened { get; private set; } = false;
     public bool IsEaten { get; private set; } = false;
@@ -21,6 +21,7 @@ public class GhostController : MonoBehaviour
 
     // cache any GhostBehavior components on this GameObject (may be multiple)
     private GhostBehavior[] behaviors;
+    private bool isFrozen;
 
     // Called by Pacman when a powered-up Pacman eats a ghost.
     // Now validates a nearby Pacman collision before marking eaten.
@@ -67,6 +68,28 @@ public class GhostController : MonoBehaviour
                 }
                 break;
             }
+        }
+    }
+
+    public void SetFrozen(bool frozen)
+    {
+        isFrozen = frozen;
+
+        if (behaviors == null)
+        {
+            behaviors = GetComponents<GhostBehavior>();
+        }
+
+        foreach (var behavior in behaviors)
+        {
+            if (behavior == null) continue;
+            behavior.enabled = !frozen;
+        }
+
+        Movement movement = GetComponent<Movement>();
+        if (movement != null)
+        {
+            movement.enabled = !frozen;
         }
     }
 
@@ -173,6 +196,10 @@ public class GhostController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        if (isFrozen)
+        {
+            return;
+        }
     }
 }
+

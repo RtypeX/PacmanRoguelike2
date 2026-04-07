@@ -249,6 +249,22 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0f;
     }
 
+    public void PacmanEaten()
+    {
+        HandlePlayerDied();
+    }
+
+    public void GhostEaten(Ghost ghost)
+    {
+        if (ghost == null)
+        {
+            return;
+        }
+
+        CurrencyManager.Instance?.AddPoints(ghost.points);
+        ghost.gameObject.SetActive(false);
+    }
+
     public void ProceedToUpgrades()
     {
         Time.timeScale = 1f;
