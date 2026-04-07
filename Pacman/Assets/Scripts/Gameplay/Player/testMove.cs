@@ -11,6 +11,7 @@ public class testMove : MonoBehaviour
 
     [Header("Movement")]
     public float moveSpeed = 5f;
+    public float maxMoveSpeed = 7.5f;
 
     [Header("Lives")]
     public int maxLives = 3;
@@ -106,7 +107,7 @@ public class testMove : MonoBehaviour
         ManageHUD.Instance?.UpdateLivesUI(CurrentLives);
 
         // Also apply speed while we are here
-        moveSpeed = 5f + PlayerUpgrades.Instance.SpeedBonus;
+        moveSpeed = Mathf.Min(5f + PlayerUpgrades.Instance.SpeedBonus, maxMoveSpeed);
         powerUpDuration = 8f + PlayerUpgrades.Instance.PowerDurationBonus;
     }
 
@@ -165,6 +166,7 @@ public class testMove : MonoBehaviour
     private void Move()
     {
         Vector2 pos = rb.position;
+        float moveStep = GetMoveStep();
 
         if (IsAtCellCenter(pos))
         {
@@ -184,7 +186,7 @@ public class testMove : MonoBehaviour
 
         if (currentDirection != Vector2.zero)
         {
-            rb.MovePosition(rb.position + currentDirection * moveSpeed * Time.fixedDeltaTime);
+            rb.MovePosition(rb.position + currentDirection * moveStep);
         }
         else
         {
@@ -212,7 +214,19 @@ public class testMove : MonoBehaviour
     private bool IsAtCellCenter(Vector2 pos)
     {
         Vector2 center = WorldToCellCenter(pos);
-        return Vector2.Distance(pos, center) < turnTolerance;
+        return Vector2.Distance(pos, center) <= GetCenterSnapTolerance();
+    }
+
+    private float GetMoveStep()
+    {
+        return Mathf.Min(moveSpeed, maxMoveSpeed) * Time.fixedDeltaTime;
+    }
+
+    private float GetCenterSnapTolerance()
+    {
+        // At higher speeds we can step over the exact center between physics ticks,
+        // so expand the snap window based on the current movement step.
+        return Mathf.Max(turnTolerance, GetMoveStep() * 0.6f);
     }
 
     // ─── Power-Up ─────────────────────────────────────────────────────────
@@ -389,7 +403,10 @@ public class testMove : MonoBehaviour
 
     // ─── Upgrade Hooks (Called by PlayerUpgrades during purchase) ──────────
 
-    public void UpgradeMoveSpeed(float bonus) => moveSpeed += bonus;
+    public void UpgradeMoveSpeed(float bonus)
+    {
+        moveSpeed = Mathf.Min(moveSpeed + bonus, maxMoveSpeed);
+    }
     public void UpgradePowerDuration(float bonus) => powerUpDuration += bonus;
     public void UpgradeMaxLives(int bonus)
     {
