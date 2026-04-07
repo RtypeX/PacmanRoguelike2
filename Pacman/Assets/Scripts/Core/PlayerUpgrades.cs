@@ -112,7 +112,19 @@ public class PlayerUpgrades : MonoBehaviour
 
     public void ApplyUpgrade(UpgradeData upgrade, int cost, float upgradeValue)
     {
-        if (upgrade == null || !CanAfford(upgrade.costType, cost)) return;
+        if (upgrade == null)
+        {
+            Debug.LogWarning("PlayerUpgrades.ApplyUpgrade called with null upgrade.");
+            return;
+        }
+
+        if (!CanAfford(upgrade.costType, cost))
+        {
+            Debug.LogWarning($"PlayerUpgrades.ApplyUpgrade could not afford {upgrade.upgradeName}. Cost: {cost} {upgrade.costType}.");
+            return;
+        }
+
+        Debug.Log($"Applying upgrade {upgrade.upgradeName} ({upgrade.upgradeType}) for cost {cost} with value {upgradeValue}. Current tier: {GetTier(upgrade.upgradeType)}");
 
         // Deduct cost via CurrencyManager
         if (upgrade.costType == CurrencyType.Points)
@@ -167,5 +179,6 @@ public class PlayerUpgrades : MonoBehaviour
         }
 
         upgradeTiers[upgrade.upgradeType] = GetTier(upgrade.upgradeType) + 1;
+        Debug.Log($"Applied upgrade {upgrade.upgradeName}. New tier: {upgradeTiers[upgrade.upgradeType]}. FruitUnlocked={FruitUnlocked}, BonusLives={BonusLives}, SpeedBonus={SpeedBonus}, TimerBonus={TimerBonus}, ScoreMultiplier={ScoreMultiplier}");
     }
 }

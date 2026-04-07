@@ -7,6 +7,27 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    public static GameManager EnsureInstance()
+    {
+        if (Instance != null)
+        {
+            Instance.EnsureCoreManagers();
+            return Instance;
+        }
+
+        GameManager existing = FindObjectOfType<GameManager>();
+        if (existing != null)
+        {
+            existing.EnsureCoreManagers();
+            return existing;
+        }
+
+        GameObject gameManagerObject = new GameObject("GameManager");
+        GameManager gameManager = gameManagerObject.AddComponent<GameManager>();
+        gameManager.EnsureCoreManagers();
+        return gameManager;
+    }
+
     [Header("Testing")]
     public int testStartLevel = 2;
     public int testStartPoints = 0;
@@ -41,6 +62,7 @@ public class GameManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        EnsureCoreManagers();
 
         CurrentLevel = testStartLevel;
         CurrentTimerDuration = startingTimerDuration;
@@ -306,4 +328,19 @@ public class GameManager : MonoBehaviour
     public void UnlockFruit() => fruitUnlocked = true;
     public void UpgradePowerPelletCount(int count) => bonusPowerPelletCount += count;
     public void UpgradeGhostFreeze(float duration) => ghostFreezeDuration += duration;
+
+    private void EnsureCoreManagers()
+    {
+        if (CurrencyManager.Instance == null && GetComponent<CurrencyManager>() == null)
+        {
+            gameObject.AddComponent<CurrencyManager>();
+            Debug.Log("GameManager.EnsureCoreManagers created CurrencyManager.");
+        }
+
+        if (PlayerUpgrades.Instance == null && GetComponent<PlayerUpgrades>() == null)
+        {
+            gameObject.AddComponent<PlayerUpgrades>();
+            Debug.Log("GameManager.EnsureCoreManagers created PlayerUpgrades.");
+        }
+    }
 }

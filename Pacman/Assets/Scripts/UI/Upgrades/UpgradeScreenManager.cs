@@ -84,11 +84,15 @@ public class UpgradeScreenManager : MonoBehaviour
     private int currentIndex = 0;
     private HashSet<int> purchasedIndexes = new HashSet<int>();
     private int rerollCount = 0;
+    private TMP_FontAsset sharedFontAsset;
+    private const string OwnedUpgradeRowTemplateName = "OwnedUpgradeRowTemplate";
 
     private void Start()
     {
+        GameManager.EnsureInstance();
         cantAffordText?.gameObject.SetActive(false);
         alreadyPurchasedText?.gameObject.SetActive(false);
+        CacheSharedFontAsset();
         EnsureRerollButton();
         EnsureOwnedUpgradesPanel();
 
@@ -117,10 +121,7 @@ public class UpgradeScreenManager : MonoBehaviour
         yield return new WaitForEndOfFrame();
 
         RefreshCurrencyDisplay();
-
-        bool fruitUnlocked = PlayerUpgrades.Instance?.FruitUnlocked ?? false;
-        bool hasFruitFromTest = GameManager.Instance != null && GameManager.Instance.testStartFruit > 0;
-        fruitCurrencyGroup?.SetActive(fruitUnlocked || hasFruitFromTest);
+        RefreshFruitCurrencyVisibility();
         RefreshOwnedUpgradesPanel();
     }
 
@@ -153,6 +154,7 @@ public class UpgradeScreenManager : MonoBehaviour
             if (selectButton != null) selectButton.interactable = false;
             leftArrowButton?.gameObject.SetActive(false);
             rightArrowButton?.gameObject.SetActive(false);
+            RefreshFruitCurrencyVisibility();
             RefreshRerollButton();
             return;
         }
@@ -190,6 +192,7 @@ public class UpgradeScreenManager : MonoBehaviour
 
         leftArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
         rightArrowButton?.gameObject.SetActive(offeredUpgrades.Count > 1);
+        RefreshFruitCurrencyVisibility();
         RefreshRerollButton();
 
         // Card pop animation
@@ -251,17 +254,21 @@ public class UpgradeScreenManager : MonoBehaviour
         }
 
         UpgradeOffer offer = offeredUpgrades[currentIndex];
+        Debug.Log($"UpgradeScreenManager.SelectCurrent trying to buy {offer.displayName}. Cost={offer.cost} {offer.data.costType}. Current owned tier={PlayerUpgrades.Instance?.GetTier(offer.data) ?? -1}");
 
         if (PlayerUpgrades.Instance != null && !PlayerUpgrades.Instance.CanAfford(offer.data.costType, offer.cost))
         {
             cantAffordText?.gameObject.SetActive(true);
+            Debug.LogWarning($"UpgradeScreenManager.SelectCurrent cannot afford {offer.displayName}.");
             return;
         }
 
         PlayerUpgrades.Instance?.ApplyUpgrade(offer.data, offer.cost, offer.value);
         purchasedIndexes.Add(currentIndex);
+        Debug.Log($"UpgradeScreenManager.SelectCurrent purchased {offer.displayName}. New owned tier={PlayerUpgrades.Instance?.GetTier(offer.data) ?? -1}");
 
         RefreshCurrencyDisplay();
+        RefreshFruitCurrencyVisibility();
         RefreshOwnedUpgradesPanel();
         DisplayCurrentCard();
     }
@@ -271,6 +278,15 @@ public class UpgradeScreenManager : MonoBehaviour
         if (CurrencyManager.Instance == null) return;
         if (pointsText != null) pointsText.text = "POINTS: " + CurrencyManager.Instance.Points;
         if (fruitCurrencyText != null) fruitCurrencyText.text = "FRUIT: " + CurrencyManager.Instance.FruitCurrency;
+    }
+
+    private void RefreshFruitCurrencyVisibility()
+    {
+        bool fruitUnlocked = (CurrencyManager.Instance != null && CurrencyManager.Instance.FruitUnlocked)
+            || (PlayerUpgrades.Instance != null && PlayerUpgrades.Instance.FruitUnlocked);
+        bool hasFruitFromTest = GameManager.Instance != null && GameManager.Instance.testStartFruit > 0;
+        fruitCurrencyGroup?.SetActive(fruitUnlocked || hasFruitFromTest);
+        Debug.Log($"UpgradeScreenManager.RefreshFruitCurrencyVisibility fruitUnlocked={fruitUnlocked} hasFruitFromTest={hasFruitFromTest} groupAssigned={fruitCurrencyGroup != null} groupActive={fruitCurrencyGroup != null && fruitCurrencyGroup.activeSelf}");
     }
 
     private void RerollOffers()
@@ -449,29 +465,43 @@ public class UpgradeScreenManager : MonoBehaviour
     private void RefreshOwnedUpgradesPanel()
     {
         if (ownedUpgradesContentRoot == null)
+        {
+            Debug.LogWarning("UpgradeScreenManager.RefreshOwnedUpgradesPanel aborted because ownedUpgradesContentRoot is null.");
             return;
+        }
 
         EnsureOwnedUpgradesPanelVisible();
 
         if (ownedUpgradesTitleText != null)
             ownedUpgradesTitleText.text = "OWNED UPGRADES";
 
-        for (int i = ownedUpgradesContentRoot.childCount - 1; i >= 0; i--)
-            Destroy(ownedUpgradesContentRoot.GetChild(i).gameObject);
+        Debug.Log($"UpgradeScreenManager.RefreshOwnedUpgradesPanel root={ownedUpgradesContentRoot.name} childCount(beforeClear)={ownedUpgradesContentRoot.childCount}");
+        ClearOwnedUpgradeRows();
 
         List<UpgradeData> ownedUpgrades = new List<UpgradeData>();
         if (PlayerUpgrades.Instance != null)
         {
             foreach (UpgradeData upgrade in allUpgrades)
             {
-                if (upgrade != null && PlayerUpgrades.Instance.GetTier(upgrade) > 0)
-                    ownedUpgrades.Add(upgrade);
+                if (upgrade != null)
+                {
+                    int tier = PlayerUpgrades.Instance.GetTier(upgrade);
+                    Debug.Log($"UpgradeScreenManager.RefreshOwnedUpgradesPanel checked {upgrade.upgradeName}: tier={tier}");
+                    if (tier > 0)
+                        ownedUpgrades.Add(upgrade);
+                }
             }
         }
+        else
+        {
+            Debug.LogWarning("UpgradeScreenManager.RefreshOwnedUpgradesPanel found no PlayerUpgrades.Instance.");
+        }
+
+        Debug.Log($"UpgradeScreenManager.RefreshOwnedUpgradesPanel owned count={ownedUpgrades.Count}");
 
         if (ownedUpgrades.Count == 0)
         {
-            CreateOwnedUpgradeRow("No upgrades yet", "Buy an upgrade to see it listed here.", null, 0);
+            CreateOwnedUpgradeRow("No upgrades yet", "upgrade stats here", null, 0);
             return;
         }
 
@@ -486,11 +516,31 @@ public class UpgradeScreenManager : MonoBehaviour
         }
     }
 
+    private void ClearOwnedUpgradeRows()
+    {
+        for (int i = ownedUpgradesContentRoot.childCount - 1; i >= 0; i--)
+        {
+            GameObject child = ownedUpgradesContentRoot.GetChild(i).gameObject;
+            if (child.name == OwnedUpgradeRowTemplateName)
+                continue;
+
+            if (Application.isPlaying)
+                Destroy(child);
+            else
+                DestroyImmediate(child);
+        }
+    }
+
     private void EnsureOwnedUpgradesPanel()
     {
         if (ownedUpgradesContentRoot == null || ownedUpgradesTitleText == null)
         {
+            Debug.LogWarning("UpgradeScreenManager.EnsureOwnedUpgradesPanel missing scene refs. Creating runtime fallback panel.");
             CreateOwnedUpgradesPanel();
+        }
+        else
+        {
+            Debug.Log($"UpgradeScreenManager.EnsureOwnedUpgradesPanel using scene refs. Title={ownedUpgradesTitleText.name}, Content={ownedUpgradesContentRoot.name}");
         }
 
         EnsureOwnedUpgradesPanelVisible();
@@ -500,10 +550,14 @@ public class UpgradeScreenManager : MonoBehaviour
     {
         RectTransform panelRoot = GetOwnedUpgradesPanelRoot();
         if (panelRoot == null)
+        {
+            Debug.LogWarning("UpgradeScreenManager.EnsureOwnedUpgradesPanelVisible could not find panel root.");
             return;
+        }
 
         panelRoot.gameObject.SetActive(true);
         panelRoot.SetAsLastSibling();
+        Debug.Log($"UpgradeScreenManager.EnsureOwnedUpgradesPanelVisible panel={panelRoot.name} position={panelRoot.anchoredPosition} size={panelRoot.sizeDelta}");
     }
 
     private RectTransform GetOwnedUpgradesPanelRoot()
@@ -528,11 +582,11 @@ public class UpgradeScreenManager : MonoBehaviour
         panel.transform.SetParent(parentRect, false);
 
         RectTransform panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = new Vector2(1f, 0.5f);
-        panelRect.anchorMax = new Vector2(1f, 0.5f);
-        panelRect.pivot = new Vector2(1f, 0.5f);
-        panelRect.anchoredPosition = new Vector2(-48f, 20f);
-        panelRect.sizeDelta = new Vector2(270f, 420f);
+        panelRect.anchorMin = new Vector2(0f, 0.5f);
+        panelRect.anchorMax = new Vector2(0f, 0.5f);
+        panelRect.pivot = new Vector2(0f, 0.5f);
+        panelRect.anchoredPosition = new Vector2(48f, 20f);
+        panelRect.sizeDelta = new Vector2(360f, 440f);
 
         Image panelImage = panel.GetComponent<Image>();
         panelImage.color = ownedUpgradeRowColor;
@@ -552,7 +606,7 @@ public class UpgradeScreenManager : MonoBehaviour
         ownedUpgradesContentRoot.anchorMax = new Vector2(1f, 1f);
         ownedUpgradesContentRoot.pivot = new Vector2(0.5f, 1f);
         ownedUpgradesContentRoot.anchoredPosition = new Vector2(0f, -56f);
-        ownedUpgradesContentRoot.sizeDelta = new Vector2(-18f, 338f);
+        ownedUpgradesContentRoot.sizeDelta = new Vector2(-24f, 356f);
     }
 
     private TextMeshProUGUI CreatePanelText(string objectName, Transform parent, float fontSize, FontStyles style, Color color)
@@ -560,6 +614,7 @@ public class UpgradeScreenManager : MonoBehaviour
         GameObject textGo = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
         textGo.transform.SetParent(parent, false);
         TextMeshProUGUI tmp = textGo.GetComponent<TextMeshProUGUI>();
+        tmp.font = GetSharedFontAsset();
         tmp.fontSize = fontSize;
         tmp.fontStyle = style;
         tmp.color = color;
@@ -570,65 +625,99 @@ public class UpgradeScreenManager : MonoBehaviour
 
     private void CreateOwnedUpgradeRow(string title, string detail, Sprite icon, int index)
     {
-        GameObject row = new GameObject("OwnedUpgradeRow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        row.transform.SetParent(ownedUpgradesContentRoot, false);
-
+        string safeTitle = string.IsNullOrWhiteSpace(title) ? "Empty" : title.Replace(" ", "_");
+        GameObject row = CreateOwnedUpgradeRowInstance(safeTitle);
         RectTransform rowRect = row.GetComponent<RectTransform>();
+        rowRect.SetParent(ownedUpgradesContentRoot, false);
         rowRect.anchorMin = new Vector2(0f, 1f);
         rowRect.anchorMax = new Vector2(1f, 1f);
         rowRect.pivot = new Vector2(0.5f, 1f);
         rowRect.anchoredPosition = new Vector2(0f, -(index * (ownedUpgradeRowHeight + ownedUpgradeRowSpacing)));
-        rowRect.sizeDelta = new Vector2(0f, ownedUpgradeRowHeight);
+        rowRect.sizeDelta = new Vector2(rowRect.sizeDelta.x, ownedUpgradeRowHeight);
 
         Image rowImage = row.GetComponent<Image>();
-        rowImage.color = ownedUpgradeRowColor;
+        if (rowImage != null)
+            rowImage.color = ownedUpgradeRowColor;
 
-        GameObject iconBg = new GameObject("IconBg", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        iconBg.transform.SetParent(row.transform, false);
-        RectTransform iconBgRect = iconBg.GetComponent<RectTransform>();
-        iconBgRect.anchorMin = new Vector2(0f, 0.5f);
-        iconBgRect.anchorMax = new Vector2(0f, 0.5f);
-        iconBgRect.pivot = new Vector2(0f, 0.5f);
-        iconBgRect.anchoredPosition = new Vector2(8f, 0f);
-        iconBgRect.sizeDelta = new Vector2(30f, 30f);
-        Image iconBgImage = iconBg.GetComponent<Image>();
-        iconBgImage.color = ownedUpgradeIconBgColor;
+        Image iconBgImage = FindImageByName(row.transform, "IconBg");
+        if (iconBgImage != null)
+            iconBgImage.color = ownedUpgradeIconBgColor;
 
-        if (icon != null)
+        Image iconImage = FindImageByName(row.transform, "Icon");
+        if (iconImage != null)
         {
-            GameObject iconGo = new GameObject("Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            iconGo.transform.SetParent(iconBg.transform, false);
-            RectTransform iconRect = iconGo.GetComponent<RectTransform>();
-            iconRect.anchorMin = Vector2.zero;
-            iconRect.anchorMax = Vector2.one;
-            iconRect.offsetMin = new Vector2(3f, 3f);
-            iconRect.offsetMax = new Vector2(-3f, -3f);
-            Image iconImage = iconGo.GetComponent<Image>();
             iconImage.sprite = icon;
             iconImage.preserveAspect = true;
-            iconImage.color = Color.white;
+            iconImage.color = icon != null ? Color.white : new Color(1f, 1f, 1f, 0f);
+            iconImage.gameObject.SetActive(icon != null);
         }
 
-        TextMeshProUGUI titleText = CreateOwnedUpgradeText("Title", row.transform, ownedUpgradeNameColor, 13f, FontStyles.Bold);
-        RectTransform titleRect = titleText.rectTransform;
-        titleRect.anchorMin = new Vector2(0f, 1f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.pivot = new Vector2(0f, 1f);
-        titleRect.anchoredPosition = new Vector2(46f, -5f);
-        titleRect.sizeDelta = new Vector2(-54f, 18f);
-        titleText.text = title;
+        TextMeshProUGUI titleText = FindTextByName(row.transform, "Title");
+        if (titleText != null)
+        {
+            titleText.text = title;
+            titleText.color = ownedUpgradeNameColor;
+        }
 
-        TextMeshProUGUI detailText = CreateOwnedUpgradeText("Detail", row.transform, ownedUpgradeDetailColor, 10.5f, FontStyles.Normal);
-        RectTransform detailRect = detailText.rectTransform;
-        detailRect.anchorMin = new Vector2(0f, 0f);
-        detailRect.anchorMax = new Vector2(1f, 1f);
-        detailRect.pivot = new Vector2(0f, 0f);
-        detailRect.anchoredPosition = new Vector2(46f, 4f);
-        detailRect.sizeDelta = new Vector2(-54f, 18f);
-        detailText.text = detail;
+        TextMeshProUGUI detailText = FindTextByName(row.transform, "Detail");
+        if (detailText != null)
+        {
+            detailText.text = detail;
+            detailText.color = ownedUpgradeDetailColor;
+        }
 
         float totalHeight = (index + 1) * ownedUpgradeRowHeight + (index * ownedUpgradeRowSpacing);
         ownedUpgradesContentRoot.sizeDelta = new Vector2(ownedUpgradesContentRoot.sizeDelta.x, totalHeight);
+        Debug.Log($"UpgradeScreenManager.CreateOwnedUpgradeRow created {row.name} at index {index}. Root childCount={ownedUpgradesContentRoot.childCount}, rootSize={ownedUpgradesContentRoot.sizeDelta}");
+    }
+
+    private GameObject CreateOwnedUpgradeRowInstance(string safeTitle)
+    {
+        RectTransform template = GetOwnedUpgradeRowTemplate();
+        if (template != null)
+        {
+            GameObject row = Instantiate(template.gameObject, ownedUpgradesContentRoot);
+            row.name = "OwnedUpgradeRow_" + safeTitle;
+            row.SetActive(true);
+            return row;
+        }
+
+        GameObject fallback = new GameObject("OwnedUpgradeRow_" + safeTitle, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        fallback.transform.SetParent(ownedUpgradesContentRoot, false);
+        return fallback;
+    }
+
+    private RectTransform GetOwnedUpgradeRowTemplate()
+    {
+        if (ownedUpgradesContentRoot == null)
+            return null;
+
+        Transform template = ownedUpgradesContentRoot.Find(OwnedUpgradeRowTemplateName);
+        return template as RectTransform;
+    }
+
+    private TextMeshProUGUI FindTextByName(Transform root, string objectName)
+    {
+        TextMeshProUGUI[] texts = root.GetComponentsInChildren<TextMeshProUGUI>(true);
+        foreach (TextMeshProUGUI text in texts)
+        {
+            if (text.name == objectName)
+                return text;
+        }
+
+        return null;
+    }
+
+    private Image FindImageByName(Transform root, string objectName)
+    {
+        Image[] images = root.GetComponentsInChildren<Image>(true);
+        foreach (Image image in images)
+        {
+            if (image.name == objectName)
+                return image;
+        }
+
+        return null;
     }
 
     private TextMeshProUGUI CreateOwnedUpgradeText(string objectName, Transform parent, Color color, float fontSize, FontStyles style)
@@ -636,12 +725,44 @@ public class UpgradeScreenManager : MonoBehaviour
         GameObject textGo = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
         textGo.transform.SetParent(parent, false);
         TextMeshProUGUI tmp = textGo.GetComponent<TextMeshProUGUI>();
+        tmp.font = GetSharedFontAsset();
         tmp.color = color;
         tmp.fontSize = fontSize;
         tmp.fontStyle = style;
         tmp.alignment = TextAlignmentOptions.Left;
         tmp.enableWordWrapping = false;
         return tmp;
+    }
+
+    private void CacheSharedFontAsset()
+    {
+        sharedFontAsset = GetSharedFontAsset();
+    }
+
+    private TMP_FontAsset GetSharedFontAsset()
+    {
+        if (sharedFontAsset != null)
+            return sharedFontAsset;
+
+        if (titleText != null && titleText.font != null)
+        {
+            sharedFontAsset = titleText.font;
+            return sharedFontAsset;
+        }
+
+        if (nameText != null && nameText.font != null)
+        {
+            sharedFontAsset = nameText.font;
+            return sharedFontAsset;
+        }
+
+        if (ownedUpgradesTitleText != null && ownedUpgradesTitleText.font != null)
+        {
+            sharedFontAsset = ownedUpgradesTitleText.font;
+            return sharedFontAsset;
+        }
+
+        return TMP_Settings.defaultFontAsset;
     }
 
     private string GetOwnedUpgradeSummary(UpgradeData upgrade, int tier)

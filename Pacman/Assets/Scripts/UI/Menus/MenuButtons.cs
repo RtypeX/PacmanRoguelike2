@@ -125,14 +125,6 @@ public class MenuButtons : MonoBehaviour
 
     private GameManager GetOrCreateGameManager()
     {
-        if (GameManager.Instance != null)
-            return GameManager.Instance;
-
-        GameManager existing = FindObjectOfType<GameManager>();
-        if (existing != null)
-            return existing;
-
-        GameObject gameManagerObject = new GameObject("GameManager");
-        return gameManagerObject.AddComponent<GameManager>();
+        return GameManager.EnsureInstance();
     }
 }
