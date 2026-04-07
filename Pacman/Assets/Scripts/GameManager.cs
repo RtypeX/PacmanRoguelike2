@@ -236,6 +236,7 @@ public class GameManager : MonoBehaviour
     {
         if (!levelInitialized) return;
         StopTimer();
+        //animator.SetTrigger("Death");
         ManageHUD.Instance?.ShowLoseScreen();
         Time.timeScale = 0f;
     }
