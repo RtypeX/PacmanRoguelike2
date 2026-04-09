@@ -376,11 +376,19 @@ public class testMove : MonoBehaviour
                 break;
 
             case "Fruit":
-                other.gameObject.SetActive(false);
-                AddScore(100);
-                AddFruitCurrency(1);
-                ManageHUD.Instance?.UpdateFruitCurrency(
-                    CurrencyManager.Instance != null ? CurrencyManager.Instance.FruitCurrency : FruitCurrency);
+                FruitPickup fruitPickup = other.GetComponent<FruitPickup>();
+                if (fruitPickup != null)
+                {
+                    fruitPickup.Collect(this);
+                }
+                else
+                {
+                    other.gameObject.SetActive(false);
+                    AddScore(100);
+                    AddFruitCurrency(1);
+                    ManageHUD.Instance?.UpdateFruitCurrency(
+                        CurrencyManager.Instance != null ? CurrencyManager.Instance.FruitCurrency : FruitCurrency);
+                }
                 break;
 
             case "Ghost":

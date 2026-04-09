@@ -32,10 +32,15 @@ public class PelletGenerator : MonoBehaviour
     [Tooltip("Minimum distance in cells from Pac-Man spawn.")]
     public float minPowerPelletDistanceFromSpawn = 6f;
 
+    private readonly List<GameObject> spawnedPellets = new List<GameObject>();
+
     private void Start()
     {
         if (generateOnStart)
+        {
+            Debug.Log("PelletGenerator.Start generating pellets on start.");
             GeneratePellets();
+        }
     }
 
     public void GeneratePellets()
@@ -107,12 +112,44 @@ public class PelletGenerator : MonoBehaviour
 
             if (pelletParent != null)
                 spawned.transform.SetParent(pelletParent);
+
+            spawnedPellets.Add(spawned);
         }
+
+        Debug.Log($"PelletGenerator.GeneratePellets spawned {spawnedPellets.Count} pellets/power pellets total.");
+    }
+
+    public GameObject GetRandomSpawnedPellet(bool includePowerPellets = false)
+    {
+        List<GameObject> candidates = new List<GameObject>();
+
+        foreach (GameObject pellet in spawnedPellets)
+        {
+            if (pellet == null || !pellet.activeInHierarchy)
+                continue;
+
+            if (!includePowerPellets && pellet.CompareTag("PowerPellet"))
+                continue;
+
+            candidates.Add(pellet);
+        }
+
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning($"PelletGenerator.GetRandomSpawnedPellet found no candidates. spawnedPellets={spawnedPellets.Count}, includePowerPellets={includePowerPellets}");
+            return null;
+        }
+
+        GameObject chosen = candidates[Random.Range(0, candidates.Count)];
+        Debug.Log($"PelletGenerator.GetRandomSpawnedPellet chose {chosen.name} at {chosen.transform.position}. Candidate count={candidates.Count}");
+        return chosen;
     }
 
     private void ClearExistingPellets()
     {
         if (pelletParent == null) return;
+
+        spawnedPellets.Clear();
 
         for (int i = pelletParent.childCount - 1; i >= 0; i--)
         {

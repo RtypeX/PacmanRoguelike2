@@ -155,6 +155,10 @@ public class GameManager : MonoBehaviour
         if (pacman != null)
             ManageHUD.Instance?.SetPowerUpMaxDuration(pacman.powerUpDuration);
 
+        FruitSpawner fruitSpawner = FindObjectOfType<FruitSpawner>();
+        Debug.Log($"GameManager.DelayedInit fruitSpawner found={fruitSpawner != null}, fruitUnlocked={fruitUnlocked}, currencyFruitUnlocked={(CurrencyManager.Instance != null && CurrencyManager.Instance.FruitUnlocked)}");
+        fruitSpawner?.TrySpawnForLevelStart();
+
         if (ghostFreezeDuration > 0f)
             StartCoroutine(FreezeGhosts(ghostFreezeDuration));
 

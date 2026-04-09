@@ -1126,7 +1126,9 @@ MonoBehaviour:
   applyOnStart: 1
   reloadSceneAfterApply: 0
   verboseLogging: 1
-  upgradesToApply: []
+  upgradesToApply:
+  - upgrade: {fileID: 11400000, guid: 87b59debe0818074abf39f0121766306, type: 2}
+    tiersToApply: 1
 --- !u!4 &1502770065
 Transform:
   m_ObjectHideFlags: 0
