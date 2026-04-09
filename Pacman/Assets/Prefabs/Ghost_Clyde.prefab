@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &956808485454282831
+--- !u!1001 &7553859062489871770
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -8,30 +8,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1650613394935156672, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2023447522215436146, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Name
-      value: Ghost_Pinky Variant
+      value: Ghost_Clyde
       objectReference: {fileID: 0}
     - target: {fileID: 2304260910073894439, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Color.b
-      value: 0.8908123
+      value: 0.32979998
       objectReference: {fileID: 0}
     - target: {fileID: 2304260910073894439, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Color.g
-      value: 0.5330188
+      value: 0.73526
       objectReference: {fileID: 0}
     - target: {fileID: 2304260910073894439, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Color.r
-      value: 1
+      value: 0.97
+      objectReference: {fileID: 0}
+    - target: {fileID: 7076475972757071591, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: m_GravityScale
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7266702821525108216, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: a58281bcba5a37847891c523fcefae89, type: 3}
+      objectReference: {fileID: 21300000, guid: af4e648815d6cc94f93c79484e532899, type: 3}
     - target: {fileID: 8618037523770095445, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -72,12 +72,33 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9047449970215587097, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3160982849588149874, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8750940945034762748}
   m_SourcePrefab: {fileID: 100100000, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+--- !u!1 &4830853788172504040 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3160982849588149874, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+  m_PrefabInstance: {fileID: 7553859062489871770}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8750940945034762748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4830853788172504040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 788534a9ebf9e37408904a69a8202042, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sprites:
+  - {fileID: 21300000, guid: f767d1bbec7a7c04e84ec18687a1a59f, type: 3}
+  - {fileID: 21300000, guid: 6c22a3daa497ebb4a87d11db9f12abe2, type: 3}
+  animationTime: 0.25
+  loop: 1

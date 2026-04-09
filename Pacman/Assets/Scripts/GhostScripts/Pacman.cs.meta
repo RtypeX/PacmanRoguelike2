@@ -1,10 +1,9 @@
 fileFormatVersion: 2
-guid: a5743c2b73279ad46aae722b71cee121
+guid: 90100e815ea6510429747da7f088e235
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences:
-  - powerPelletPrefab: {fileID: 2845381662289636116, guid: 04d744db389a70541a9064ae9b053647, type: 3}
+  defaultReferences: []
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
