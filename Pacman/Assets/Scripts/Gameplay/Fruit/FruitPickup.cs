@@ -73,11 +73,27 @@ public class FruitPickup : MonoBehaviour
 
     private void ApplyVisual()
     {
-        if (targetRenderer == null || fruitData == null)
+        if (targetRenderer == null)
+        {
+            Debug.LogWarning($"FruitPickup on {name} is missing a targetRenderer.");
             return;
+        }
+
+        if (fruitData == null)
+        {
+            Debug.LogWarning($"FruitPickup on {name} is missing fruitData.");
+            return;
+        }
 
         activeSprite = fruitData.GetRandomVariant();
         if (activeSprite != null)
+        {
             targetRenderer.sprite = activeSprite;
+            Debug.Log($"FruitPickup applied sprite {activeSprite.name} for fruit {fruitData.fruitName} on {name}.");
+        }
+        else
+        {
+            Debug.LogWarning($"FruitPickup could not find a valid sprite for fruit {fruitData.fruitName} on {name}.");
+        }
     }
 }

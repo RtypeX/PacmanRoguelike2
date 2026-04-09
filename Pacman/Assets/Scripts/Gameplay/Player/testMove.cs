@@ -80,6 +80,8 @@ public class testMove : MonoBehaviour
 
     private void Start()
     {
+        GameManager.EnsureInstance();
+
         // 1. Apply upgrades first so the math is correct
         ApplyPurchasedUpgrades();
 
