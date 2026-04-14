@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
     }
 
     [Header("Testing")]
-    public int testStartLevel = 2;
+    public int testStartLevel = 1; // Changed default to 1 for standard indexing
     public int testStartPoints = 0;
     public int testStartFruit = 0;
 
@@ -41,8 +41,9 @@ public class GameManager : MonoBehaviour
     public GameObject powerPelletPrefab;
     public Transform[] bonusPelletSpawnPoints;
 
-    [Header("Scene Names")]
-    public string gameSceneName = "Level 0";
+    [Header("Scene Settings")]
+    // We use a prefix so we can load "Level 0", "Level 1", etc. dynamically
+    public string levelScenePrefix = "Level ";
     public string upgradeSceneName = "UpgradeScene";
 
     public int CurrentLevel { get; private set; } = 1;
@@ -64,17 +65,12 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         EnsureCoreManagers();
 
-        CurrentLevel = testStartLevel;
+        // Check if we have a saved level progress; otherwise use testStartLevel
+        CurrentLevel = PlayerPrefs.GetInt("SavedLevel", testStartLevel);
         CurrentTimerDuration = startingTimerDuration;
 
         if (testStartPoints > 0 || testStartFruit > 0)
             StartCoroutine(AddTestCurrencies());
-    }
-
-    private void Start()
-    {
-        if (SceneManager.GetActiveScene().name == gameSceneName)
-            InitLevel();
     }
 
     private void OnEnable()
@@ -96,34 +92,58 @@ public class GameManager : MonoBehaviour
         PlayerUpgrades.Instance?.ResetUpgrades();
 
         CurrentLevel = 1;
+        PlayerPrefs.SetInt("SavedLevel", 1); // Reset save data
+        LoadLevelByIndex(CurrentLevel);
         CurrentTimerDuration = startingTimerDuration;
         fruitUnlocked = false;
         bonusPowerPelletCount = 0;
         ghostFreezeDuration = 0f;
 
-        SceneManager.LoadScene(gameSceneName);
+        LoadLevelByIndex(CurrentLevel);
     }
 
-    // --- CALL THIS FROM THE MAIN MENU IF THEY JUST CAME FROM THE SHOP ---
+    // --- CALL THIS FROM THE MAIN MENU PLAY BUTTON ---
     public void LoadLevelFromMenu()
     {
-        // Reset state so old level data doesn't carry over
         levelInitialized = false;
-        pelletsRemaining = 999; // Set to a high number so check doesn't trigger 0 instantly
+        pelletsRemaining = 999;
         timerRunning = false;
-
         Time.timeScale = 1f;
-        SceneManager.LoadScene(gameSceneName);
+
+        LoadLevelByIndex(CurrentLevel);
+    }
+
+    private void LoadLevelByIndex(int levelNum)
+    {
+        // Math: Level 1 = "Level 0", Level 2 = "Level 1"
+        string sceneToLoad = levelScenePrefix + (levelNum - 1);
+
+        // CHECK: Does this scene actually exist in Build Settings?
+        if (Application.CanStreamedLevelBeLoaded(sceneToLoad))
+        {
+            Debug.Log($"Loading Scene: {sceneToLoad} (CurrentLevel: {levelNum})");
+            SceneManager.LoadScene(sceneToLoad);
+        }
+        else
+        {
+            // If it doesn't exist (e.g., you finished the game), loop or stay on last level
+            Debug.LogWarning($"Scene {sceneToLoad} not found! Staying on highest level.");
+            CurrentLevel = Mathf.Max(1, levelNum - 1);
+            PlayerPrefs.SetInt("SavedLevel", CurrentLevel);
+            SceneManager.LoadScene(levelScenePrefix + (CurrentLevel - 1));
+        }
     }
 
     private void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name != gameSceneName) return;
+        // Any scene starting with "Level " will trigger initialization
+        if (!scene.name.StartsWith(levelScenePrefix)) return;
         InitLevel();
     }
 
     private void InitLevel()
     {
+        Time.timeScale = 1f; // Ensure physics are running
         levelInitialized = false;
         StopTimer();
         StartCoroutine(DelayedInit());
@@ -131,24 +151,18 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator DelayedInit()
     {
-        // Give the scene a moment to instantiate all objects
         yield return new WaitForEndOfFrame();
 
-        // 1. Spawn any bonus items from upgrades
         if (bonusPowerPelletCount > 0)
             SpawnBonusPowerPellets(bonusPowerPelletCount);
 
-        // 2. COUNT PELLETS FIRST - Before we do anything else
         pelletsRemaining = GameObject.FindGameObjectsWithTag("Pellet").Length
                          + GameObject.FindGameObjectsWithTag("PowerPellet").Length;
 
         Debug.Log($"Level Initialized. Pellets to eat: {pelletsRemaining}");
 
-        // 3. Find Player and HUD
         testMove pacman = FindObjectOfType<testMove>();
         int lives = pacman != null ? pacman.CurrentLives : startingLives;
-
-        Time.timeScale = 1f;
 
         ManageHUD.Instance?.InitHUD(lives, CurrentLevel, CurrentTimerDuration, fruitUnlocked);
 
@@ -156,40 +170,67 @@ public class GameManager : MonoBehaviour
             ManageHUD.Instance?.SetPowerUpMaxDuration(pacman.powerUpDuration);
 
         FruitSpawner fruitSpawner = FindObjectOfType<FruitSpawner>();
-        Debug.Log($"GameManager.DelayedInit fruitSpawner found={fruitSpawner != null}, fruitUnlocked={fruitUnlocked}, currencyFruitUnlocked={(CurrencyManager.Instance != null && CurrencyManager.Instance.FruitUnlocked)}");
         fruitSpawner?.TrySpawnForLevelStart();
 
         if (ghostFreezeDuration > 0f)
             StartCoroutine(FreezeGhosts(ghostFreezeDuration));
 
-        // 4. Start the game logic
         levelInitialized = true;
         StartTimer();
     }
 
     public void OnPelletEaten()
     {
-        // Don't check for win if the level is still setting up
         if (!levelInitialized) return;
-
         pelletsRemaining--;
-
-        if (pelletsRemaining <= 0)
-        {
-            WinLevel();
-        }
+        if (pelletsRemaining <= 0) WinLevel();
     }
 
     private void WinLevel()
     {
-        levelInitialized = false; // Prevent double triggers
+        levelInitialized = false;
         StopTimer();
         ManageHUD.Instance?.ShowWinScreen();
         Time.timeScale = 0f;
     }
 
-    // ... (Keep your SpawnBonusPowerPellets, FreezeGhosts, and Timer methods exactly as they were)
+    public void ProceedToUpgrades()
+    {
+        Time.timeScale = 1f;
 
+        // Peek ahead: Does the NEXT level exist?
+        string nextLevelName = levelScenePrefix + CurrentLevel; // If current is 1, checks "Level 1"
+
+        if (Application.CanStreamedLevelBeLoaded(nextLevelName))
+        {
+            CurrentLevel++;
+            PlayerPrefs.SetInt("SavedLevel", CurrentLevel);
+            Debug.Log("Progressing to Level " + (CurrentLevel - 1));
+        }
+        else
+        {
+            Debug.Log("No more levels found in Build Settings. Replaying last level.");
+        }
+
+        GoToUpgradeScreen();
+    }
+
+    public void RestartLevel()
+    {
+        Time.timeScale = 1f;
+        StopTimer();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void GoToUpgradeScreen()
+    {
+        levelInitialized = false;
+        Time.timeScale = 1f;
+        StopTimer();
+        SceneManager.LoadScene(upgradeSceneName);
+    }
+
+    // ... (Keep existing Ghost freezing, Timer, and Currency methods)
     private void SpawnBonusPowerPellets(int count)
     {
         if (powerPelletPrefab == null || bonusPelletSpawnPoints == null || bonusPelletSpawnPoints.Length == 0)
@@ -212,120 +253,46 @@ public class GameManager : MonoBehaviour
     private IEnumerator FreezeGhosts(float duration)
     {
         GhostController[] ghosts = FindObjectsOfType<GhostController>();
-        foreach (GhostController ghost in ghosts)
-            ghost.SetFrozen(true);
-
+        foreach (GhostController ghost in ghosts) ghost.SetFrozen(true);
         yield return new WaitForSeconds(duration);
-
-        foreach (GhostController ghost in ghosts)
-            if (ghost != null) ghost.SetFrozen(false);
+        foreach (GhostController ghost in ghosts) if (ghost != null) ghost.SetFrozen(false);
     }
 
-    private void StartTimer()
-    {
-        StopTimer();
-        timerCoroutine = StartCoroutine(RunTimer());
-    }
+    private void StartTimer() { StopTimer(); timerCoroutine = StartCoroutine(RunTimer()); }
 
     private IEnumerator RunTimer()
     {
         timerRunning = true;
         timerRemaining = CurrentTimerDuration;
-
         while (timerRemaining > 0f && timerRunning)
         {
             timerRemaining -= Time.deltaTime;
-            if (ManageHUD.Instance != null)
-                ManageHUD.Instance.SetTimerDisplay(timerRemaining);
-
+            if (ManageHUD.Instance != null) ManageHUD.Instance.SetTimerDisplay(timerRemaining);
             yield return null;
         }
-
-        if (timerRunning && timerRemaining <= 0)
-        {
-            timerRunning = false;
-            HandleTimeOut();
-        }
+        if (timerRunning && timerRemaining <= 0) { timerRunning = false; HandleTimeOut(); }
     }
 
-    public void StopTimer()
-    {
-        timerRunning = false;
-        if (timerCoroutine != null)
-        {
-            StopCoroutine(timerCoroutine);
-            timerCoroutine = null;
-        }
-    }
+    public void StopTimer() { timerRunning = false; if (timerCoroutine != null) { StopCoroutine(timerCoroutine); timerCoroutine = null; } }
 
-    private void HandleTimeOut()
-    {
-        if (!levelInitialized) return;
-        StopTimer();
-        //animator.SetTrigger("Death");
-        ManageHUD.Instance?.ShowLoseScreen();
-        Time.timeScale = 0f;
-    }
+    private void HandleTimeOut() { if (!levelInitialized) return; StopTimer(); ManageHUD.Instance?.ShowLoseScreen(); Time.timeScale = 0f; }
 
-    private void HandlePlayerDied()
-    {
-        if (!levelInitialized) return;
-        StopTimer();
-        ManageHUD.Instance?.ShowLoseScreen();
-        Time.timeScale = 0f;
-    }
+    private void HandlePlayerDied() { if (!levelInitialized) return; StopTimer(); ManageHUD.Instance?.ShowLoseScreen(); Time.timeScale = 0f; }
 
-    public void PacmanEaten()
-    {
-        HandlePlayerDied();
-    }
+    public void PacmanEaten() => HandlePlayerDied();
 
     public void GhostEaten(Ghost ghost)
     {
-        if (ghost == null)
-        {
-            return;
-        }
-
+        if (ghost == null) return;
         CurrencyManager.Instance?.AddPoints(ghost.points);
         ghost.gameObject.SetActive(false);
     }
 
-    public void ProceedToUpgrades()
-    {
-        Time.timeScale = 1f;
-        CurrentLevel++;
-        GoToUpgradeScreen();
-    }
-
-    public void RestartLevel()
-    {
-        Time.timeScale = 1f;
-        StopTimer();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
-
-    public void GoToUpgradeScreen()
-    {
-        levelInitialized = false;
-        Time.timeScale = 1f;
-        StopTimer();
-        SceneManager.LoadScene(upgradeSceneName);
-    }
-
     private IEnumerator AddTestCurrencies()
     {
-        yield return new WaitUntil(() =>
-            CurrencyManager.Instance != null && PlayerUpgrades.Instance != null);
-
-        if (testStartPoints > 0)
-            CurrencyManager.Instance.AddPoints(testStartPoints);
-
-        if (testStartFruit > 0)
-        {
-            CurrencyManager.Instance.UnlockFruit();
-            CurrencyManager.Instance.AddFruitCurrency(testStartFruit);
-        }
+        yield return new WaitUntil(() => CurrencyManager.Instance != null && PlayerUpgrades.Instance != null);
+        if (testStartPoints > 0) CurrencyManager.Instance.AddPoints(testStartPoints);
+        if (testStartFruit > 0) { CurrencyManager.Instance.UnlockFruit(); CurrencyManager.Instance.AddFruitCurrency(testStartFruit); }
     }
 
     public void UpgradeTimerDuration(float bonus) => CurrentTimerDuration += bonus;
@@ -335,16 +302,7 @@ public class GameManager : MonoBehaviour
 
     private void EnsureCoreManagers()
     {
-        if (CurrencyManager.Instance == null && GetComponent<CurrencyManager>() == null)
-        {
-            gameObject.AddComponent<CurrencyManager>();
-            Debug.Log("GameManager.EnsureCoreManagers created CurrencyManager.");
-        }
-
-        if (PlayerUpgrades.Instance == null && GetComponent<PlayerUpgrades>() == null)
-        {
-            gameObject.AddComponent<PlayerUpgrades>();
-            Debug.Log("GameManager.EnsureCoreManagers created PlayerUpgrades.");
-        }
+        if (CurrencyManager.Instance == null && GetComponent<CurrencyManager>() == null) gameObject.AddComponent<CurrencyManager>();
+        if (PlayerUpgrades.Instance == null && GetComponent<PlayerUpgrades>() == null) gameObject.AddComponent<PlayerUpgrades>();
     }
 }

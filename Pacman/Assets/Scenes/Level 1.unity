@@ -153,7 +153,7 @@ Transform:
   m_GameObject: {fileID: 32919690}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.39, y: -0.05, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5952,9 +5952,9 @@ GameObject:
   - component: {fileID: 825091228}
   - component: {fileID: 825091227}
   - component: {fileID: 825091231}
-  - component: {fileID: 825091232}
   - component: {fileID: 825091233}
-  m_Layer: 0
+  - component: {fileID: 825091234}
+  m_Layer: 6
   m_Name: Pacman
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -6070,7 +6070,7 @@ Transform:
   m_GameObject: {fileID: 825091225}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.58, y: -2.84, z: 0}
+  m_LocalPosition: {x: -5.5, y: -2.5, z: 0}
   m_LocalScale: {x: 0.72884, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6111,28 +6111,6 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.3
---- !u!114 &825091232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 825091225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c28ab8e8845730f408a156fd83a934c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 5
-  maxLives: 3
-  tileSize: 1
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  gridOffset: {x: 0.5, y: 0.5}
-  turnTolerance: 0.06
-  currentDirection: {x: 0, y: 0}
-  powerUpDuration: 8
 --- !u!114 &825091233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6145,6 +6123,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29e7aa9e52fad224f97adbdb5fa26756, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &825091234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 825091225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c28ab8e8845730f408a156fd83a934c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
+  maxMoveSpeed: 7.5
+  maxLives: 3
+  tileSize: 1
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  gridOffset: {x: 0.5, y: 0.5}
+  turnTolerance: 0.08
+  currentDirection: {x: 0, y: 0}
+  powerUpDuration: 8
+  deathSequence: {fileID: 0}
 --- !u!1 &1031812837
 GameObject:
   m_ObjectHideFlags: 0
@@ -6625,7 +6627,7 @@ Transform:
   m_GameObject: {fileID: 1402134133}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.39, y: -0.05, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13234,7 +13236,7 @@ Transform:
   m_GameObject: {fileID: 1577787547}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.37, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

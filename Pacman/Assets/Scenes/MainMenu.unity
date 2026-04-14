@@ -910,14 +910,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5743c2b73279ad46aae722b71cee121, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testStartLevel: 2
+  testStartLevel: 1
   testStartPoints: 0
   testStartFruit: 0
   startingTimerDuration: 60
   startingLives: 3
   powerPelletPrefab: {fileID: 2845381662289636116, guid: 04d744db389a70541a9064ae9b053647, type: 3}
   bonusPelletSpawnPoints: []
-  gameSceneName: Level 0
+  levelScenePrefix: 'Level '
   upgradeSceneName: UpgradeScene
 --- !u!4 &1250725075
 Transform:
