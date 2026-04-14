@@ -4978,6 +4978,9 @@ MonoBehaviour:
     m_Bits: 8
   gridOffset: {x: 0.5, y: 0.5}
   turnTolerance: 0.06
+  canWarp: 0
+  leftBoundary: 30
+  rightBoundary: 20
   currentDirection: {x: 0, y: 0}
   powerUpDuration: 8
   deathSequence: {fileID: 0}
