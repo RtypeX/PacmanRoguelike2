@@ -5416,8 +5416,9 @@ MonoBehaviour:
   livesText: {fileID: 406960516}
   winPanel: {fileID: 1839204289}
   losePanel: {fileID: 719412687}
+  loseMenuButton: {fileID: 1931245111}
   timerText: {fileID: 632374479}
-  nextLevelButton: {fileID: 0}
+  mainMenuSceneName: MainMenu
 --- !u!1 &1349851106
 GameObject:
   m_ObjectHideFlags: 0
