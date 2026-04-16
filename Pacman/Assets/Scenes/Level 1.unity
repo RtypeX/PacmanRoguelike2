@@ -13351,6 +13351,57 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &1874256195
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1874256197}
+  - component: {fileID: 1874256196}
+  m_Layer: 0
+  m_Name: FruitSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1874256196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874256195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc2d2df150c4b443ab795f9dc2135dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fruitPrefab: {fileID: -5279313724882077542, guid: 326466237b2972a4d8691d329ad39193, type: 3}
+  spawnPoints: []
+  availableFruits:
+  - {fileID: 11400000, guid: 161464be055b6714c927d3cebd9206a9, type: 2}
+  spawnAtLevelStartIfUnlocked: 1
+  keepOnlyOneActiveFruit: 1
+  levelsPerFruitTier: 1
+--- !u!4 &1874256197
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874256195}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 517.67163, y: 273.9952, z: -2.7530296}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1931245109
 GameObject:
   m_ObjectHideFlags: 0
@@ -13696,3 +13747,4 @@ SceneRoots:
   - {fileID: 1347085326}
   - {fileID: 1839204293}
   - {fileID: 719412691}
+  - {fileID: 1874256197}

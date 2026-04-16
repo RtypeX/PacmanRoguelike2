@@ -156,9 +156,9 @@ public class SettingsManager : MonoBehaviour
         ApplyVolume(SFX_VOL, sfx);
     }
 
-    private void SetMasterVolume(float value) { ApplyVolume(MASTER_VOL, value); PlayerPrefs.SetFloat(MASTER_VOL, value); }
-    private void SetMusicVolume(float value) { ApplyVolume(MUSIC_VOL, value); PlayerPrefs.SetFloat(MUSIC_VOL, value); }
-    private void SetSFXVolume(float value) { ApplyVolume(SFX_VOL, value); PlayerPrefs.SetFloat(SFX_VOL, value); }
+    private void SetMasterVolume(float value) { ApplyVolume(MASTER_VOL, value); PlayerPrefs.SetFloat(MASTER_VOL, value); AudioManager.Instance?.RefreshVolumes(); }
+    private void SetMusicVolume(float value) { ApplyVolume(MUSIC_VOL, value); PlayerPrefs.SetFloat(MUSIC_VOL, value); AudioManager.Instance?.RefreshVolumes(); }
+    private void SetSFXVolume(float value) { ApplyVolume(SFX_VOL, value); PlayerPrefs.SetFloat(SFX_VOL, value); AudioManager.Instance?.RefreshVolumes(); }
 
     private void ApplyVolume(string key, float value)
     {

@@ -11092,7 +11092,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 161464be055b6714c927d3cebd9206a9, type: 2}
   spawnAtLevelStartIfUnlocked: 1
   keepOnlyOneActiveFruit: 1
-  levelsPerFruitTier: 2
+  levelsPerFruitTier: 1
 --- !u!4 &1901288113
 Transform:
   m_ObjectHideFlags: 0

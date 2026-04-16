@@ -249,6 +249,7 @@ public class testMove : MonoBehaviour
     {
         IsPoweredUp = true;
         powerUpTimer = powerUpDuration;
+        AudioManager.Instance?.PlayPowerPellet();
         OnPowerUpStart?.Invoke();
     }
 
@@ -374,6 +375,7 @@ public class testMove : MonoBehaviour
             case "Pellet":
                 other.gameObject.SetActive(false);
                 AddScore(10);
+                AudioManager.Instance?.PlayPellet();
                 GameManager.Instance?.OnPelletEaten();
                 break;
 
@@ -400,6 +402,7 @@ public class testMove : MonoBehaviour
                 else if (!ghost.IsEaten)
                 {
                     animator.SetTrigger(AnimDeath);
+                    AudioManager.Instance?.PlayDeath();
                     TakeHit();
                 }
                 break;

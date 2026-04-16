@@ -190,6 +190,7 @@ public class GameManager : MonoBehaviour
     {
         levelInitialized = false;
         StopTimer();
+        AudioManager.Instance?.PlayWin();
         ManageHUD.Instance?.ShowWinScreen();
         Time.timeScale = 0f;
     }
@@ -275,9 +276,9 @@ public class GameManager : MonoBehaviour
 
     public void StopTimer() { timerRunning = false; if (timerCoroutine != null) { StopCoroutine(timerCoroutine); timerCoroutine = null; } }
 
-    private void HandleTimeOut() { if (!levelInitialized) return; StopTimer(); ManageHUD.Instance?.ShowLoseScreen(); Time.timeScale = 0f; }
+    private void HandleTimeOut() { if (!levelInitialized) return; StopTimer(); AudioManager.Instance?.PlayLose(); ManageHUD.Instance?.ShowLoseScreen(); Time.timeScale = 0f; }
 
-    private void HandlePlayerDied() { if (!levelInitialized) return; StopTimer(); ManageHUD.Instance?.ShowLoseScreen(); Time.timeScale = 0f; }
+    private void HandlePlayerDied() { if (!levelInitialized) return; StopTimer(); AudioManager.Instance?.PlayLose(); ManageHUD.Instance?.ShowLoseScreen(); Time.timeScale = 0f; }
 
     public void PacmanEaten() => HandlePlayerDied();
 
@@ -285,6 +286,7 @@ public class GameManager : MonoBehaviour
     {
         if (ghost == null) return;
         CurrencyManager.Instance?.AddPoints(ghost.points);
+        AudioManager.Instance?.PlayGhostEaten();
         ghost.gameObject.SetActive(false);
     }
 
@@ -302,6 +304,7 @@ public class GameManager : MonoBehaviour
 
     private void EnsureCoreManagers()
     {
+        if (AudioManager.Instance == null && GetComponent<AudioManager>() == null) gameObject.AddComponent<AudioManager>();
         if (CurrencyManager.Instance == null && GetComponent<CurrencyManager>() == null) gameObject.AddComponent<CurrencyManager>();
         if (PlayerUpgrades.Instance == null && GetComponent<PlayerUpgrades>() == null) gameObject.AddComponent<PlayerUpgrades>();
     }

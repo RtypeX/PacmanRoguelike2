@@ -49,6 +49,7 @@ public class FruitPickup : MonoBehaviour
 
         player.AddScore(GetScoreValue());
         player.AddFruitCurrency(GetFruitCurrencyValue());
+        AudioManager.Instance?.PlayFruit();
         ManageHUD.Instance?.UpdateFruitCurrency(
             CurrencyManager.Instance != null ? CurrencyManager.Instance.FruitCurrency : player.FruitCurrency);
 
