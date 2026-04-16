@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI; // <--- Add this!
+using UnityEngine.UI;
+using UnityEngine.SceneManagement; // Added this for menu loading
 
 public class ManageHUD : MonoBehaviour
 {
@@ -14,13 +15,15 @@ public class ManageHUD : MonoBehaviour
     public GameObject winPanel;
 
     [Header("Lose Screen")]
-    public GameObject losePanel; // Drag your Lose Canvas/Panel here
+    public GameObject losePanel;
+    public Button loseMenuButton; // Drag the "Menu" button from your Lose Panel here!
 
     [Header("Timer")]
-    public TextMeshProUGUI timerText; // Drag your Timer Text here
+    public TextMeshProUGUI timerText;
     private float powerUpMaxDuration = 8f;
 
-    public Button nextLevelButton;
+    [Header("Scene Names")]
+    public string mainMenuSceneName = "MainMenu"; // Change this to match your menu scene name
 
     public void ShowLoseScreen()
     {
@@ -28,47 +31,45 @@ public class ManageHUD : MonoBehaviour
         {
             losePanel.SetActive(true);
             Time.timeScale = 0f;
+
+            // Link the button logic
+            if (loseMenuButton != null)
+            {
+                loseMenuButton.onClick.RemoveAllListeners();
+                loseMenuButton.onClick.AddListener(ReturnToMenu);
+            }
         }
+    }
+
+    // Logic to clean up and go back to the menu
+    public void ReturnToMenu()
+    {
+        Time.timeScale = 1f; // IMPORTANT: Unpause the game before leaving!
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     public void SetTimerDisplay(float timeRemaining)
     {
         if (timerText != null)
         {
-            // Ensure time doesn't go below zero
             float displayTime = Mathf.Max(0, timeRemaining);
-
-            // Calculate minutes and seconds
             int minutes = Mathf.FloorToInt(displayTime / 60);
             int seconds = Mathf.FloorToInt(displayTime % 60);
-
-            // Format as 00:00
             timerText.text = string.Format("{0:D2}:{1:D2}", minutes, seconds);
 
-            // Optional: Change color to red when under 10 seconds
-            if (timeRemaining <= 10f)
-            {
-                timerText.color = Color.red;
-            }
-            else
-            {
-                timerText.color = Color.white;
-            }
+            if (timeRemaining <= 10f) timerText.color = Color.red;
+            else timerText.color = Color.white;
         }
     }
 
     private void Awake()
     {
-        // Force this instance to be THE instance as soon as the level loads
         Instance = this;
-
-        // Safety check: if the game is paused from a previous win/loss, unpause it
         Time.timeScale = 1f;
     }
 
     private void OnEnable()
     {
-        // These MUST match the name of your player script (testMove)
         testMove.OnScoreChanged += UpdateScoreUI;
         testMove.OnLivesChanged += UpdateLivesUI;
     }
@@ -79,7 +80,6 @@ public class ManageHUD : MonoBehaviour
         testMove.OnLivesChanged -= UpdateLivesUI;
     }
 
-    // This keeps GameManager happy
     public void InitHUD(int lives, int level, float timer, bool fruit)
     {
         UpdateLivesUI(lives);
@@ -107,24 +107,19 @@ public class ManageHUD : MonoBehaviour
             winPanel.SetActive(true);
             Time.timeScale = 0f;
 
-            // Find the button on the panel and tell it to call the Manager
+            // Automatically find and link the upgrade button
             Button upgradeBtn = winPanel.GetComponentInChildren<Button>();
-            // ^ Replace with your specific button variable if you have one
-
-            upgradeBtn.onClick.RemoveAllListeners(); // Clear old links
-            upgradeBtn.onClick.AddListener(() => {
-                GameManager.Instance.ProceedToUpgrades();
-            });
+            if (upgradeBtn != null)
+            {
+                upgradeBtn.onClick.RemoveAllListeners();
+                upgradeBtn.onClick.AddListener(() => {
+                    GameManager.Instance.ProceedToUpgrades();
+                });
+            }
         }
     }
 
     public void ShowScorePopup(int amount, Vector3 worldPosition) { }
-
     public void UpdateFruitCurrency(int amount) { }
-
-    public void SetPowerUpMaxDuration(float duration)
-    {
-        powerUpMaxDuration = duration;
-    }
-
+    public void SetPowerUpMaxDuration(float duration) => powerUpMaxDuration = duration;
 }
