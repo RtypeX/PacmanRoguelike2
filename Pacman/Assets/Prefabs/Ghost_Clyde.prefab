@@ -8,9 +8,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8588129249669813664, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: duration
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: -2982764137909370657, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: speed
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -2982764137909370657, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: obstacleLayer.m_Bits
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 2023447522215436146, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Name
       value: Ghost_Clyde
+      objectReference: {fileID: 0}
+    - target: {fileID: 2023447522215436146, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: m_TagString
+      value: Ghost
       objectReference: {fileID: 0}
     - target: {fileID: 2304260910073894439, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Color.b
@@ -24,6 +40,18 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 0.97
       objectReference: {fileID: 0}
+    - target: {fileID: 3393272331650172049, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: duration
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 5325197621917683858, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7033430130897530764, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: initialBehavior
+      value: 
+      objectReference: {fileID: 1356743072702530798}
     - target: {fileID: 7076475972757071591, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_GravityScale
       value: 0
@@ -72,6 +100,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8791216041561354612, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: duration
+      value: 16
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -80,6 +112,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 8750940945034762748}
   m_SourcePrefab: {fileID: 100100000, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+--- !u!114 &1356743072702530798 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8791216041561354612, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+  m_PrefabInstance: {fileID: 7553859062489871770}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83e51600c3e0bc948a7f883d63eee710, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4830853788172504040 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3160982849588149874, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}

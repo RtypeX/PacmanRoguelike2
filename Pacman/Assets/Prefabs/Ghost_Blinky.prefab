@@ -8,6 +8,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -8588129249669813664, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: duration
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: -2982764137909370657, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: speed
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -2982764137909370657, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: initialDirection.x
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2982764137909370657, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: obstacleLayer.m_Bits
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 920526824670108299, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -19,6 +35,10 @@ PrefabInstance:
     - target: {fileID: 2023447522215436146, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Name
       value: Ghost_Blinky
+      objectReference: {fileID: 0}
+    - target: {fileID: 2023447522215436146, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: m_TagString
+      value: Ghost
       objectReference: {fileID: 0}
     - target: {fileID: 2304260910073894439, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Color.b
@@ -39,6 +59,10 @@ PrefabInstance:
     - target: {fileID: 2763657599067520037, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3393272331650172049, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: duration
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 3514193804225982577, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_Enabled
@@ -64,6 +88,14 @@ PrefabInstance:
       propertyPath: m_Radius
       value: 0.4
       objectReference: {fileID: 0}
+    - target: {fileID: 5325197621917683858, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7033430130897530764, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+      propertyPath: initialBehavior
+      value: 
+      objectReference: {fileID: 8359810283636790905}
     - target: {fileID: 7076475972757071591, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
       propertyPath: m_GravityScale
       value: 0
@@ -149,3 +181,14 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 6c22a3daa497ebb4a87d11db9f12abe2, type: 3}
   animationTime: 0.25
   loop: 1
+--- !u!114 &8359810283636790905 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -8588129249669813664, guid: 4fe34676c7d554a438b8aae0f548ba85, type: 3}
+  m_PrefabInstance: {fileID: 8995050588322266137}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93f51c948c1dc4f4eafa24447c698994, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
