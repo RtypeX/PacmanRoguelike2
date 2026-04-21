@@ -198,7 +198,11 @@ public class GameManager : MonoBehaviour
     public void OnPelletEaten()
     {
         // Don't check for win if the level is still setting up
-        if (!levelInitialized) return;
+        if (!levelInitialized)
+        {
+            Debug.Log("Player died. LevelInitialized: " + levelInitialized);
+            return;
+        }
 
         pelletsRemaining--;
 
@@ -238,13 +242,13 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator FreezeGhosts(float duration)
     {
-        GhostController[] ghostsFound = FindObjectsOfType<GhostController>();
-        foreach (GhostController ghost in ghostsFound)
+        Ghost[] ghostsFound = FindObjectsOfType<Ghost>();
+        foreach (Ghost ghost in ghostsFound)
             ghost.SetFrozen(true);
 
         yield return new WaitForSeconds(duration);
 
-        foreach (GhostController ghost in ghostsFound)
+        foreach (Ghost ghost in ghostsFound)
             if (ghost != null) ghost.SetFrozen(false);
     }
 

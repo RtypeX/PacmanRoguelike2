@@ -382,7 +382,7 @@ public class testMove : MonoBehaviour
                 break;
 
             case "Ghost":
-                GhostController ghost = other.GetComponent<GhostController>();
+                Ghost ghost = other.GetComponent<Ghost>();
                 if (ghost == null) break;
 
                 if (IsPoweredUp)
