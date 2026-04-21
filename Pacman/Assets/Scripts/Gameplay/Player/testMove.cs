@@ -148,13 +148,7 @@ public class testMove : MonoBehaviour
 
     private void TryQueueDirection(Vector2 direction)
     {
-        if (queuedDirection == direction)
-            return;
-
-        if (CanMove(direction))
-        {
-            queuedDirection = direction;
-        }
+        queuedDirection = direction;
     }
 
     // ─── Movement & Warp ─────────────────────────────────────────────────────────
@@ -330,24 +324,21 @@ public class testMove : MonoBehaviour
     public void ResetState()
     {
         enabled = true;
-        if (spriteRenderer != null) spriteRenderer.enabled = true;
-        if (circleCollider != null) circleCollider.enabled = true;
-        if (deathSequence != null) deathSequence.enabled = false;
-        if (movement != null) movement.ResetState();
+        spriteRenderer.enabled = true;
+        circleCollider.enabled = true;
+        deathSequence.enabled = false;
+        movement.ResetState();
         gameObject.SetActive(true);
     }
 
     public void DeathSequence()
     {
         enabled = false;
-        if (spriteRenderer != null) spriteRenderer.enabled = false;
-        if (circleCollider != null) circleCollider.enabled = false;
-        if (movement != null) movement.enabled = false;
-        if (deathSequence != null)
-        {
-            deathSequence.enabled = true;
-            deathSequence.Restart();
-        }
+        spriteRenderer.enabled = false;
+        circleCollider.enabled = false;
+        movement.enabled = false;
+        deathSequence.enabled = true;
+        deathSequence.Restart();
     }
 
     // ─── Animation ────────────────────────────────────────────────────────
@@ -423,4 +414,6 @@ public class testMove : MonoBehaviour
         OnLivesChanged?.Invoke(CurrentLives);
         ManageHUD.Instance?.UpdateLivesUI(CurrentLives);
     }
+
+
 }

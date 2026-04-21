@@ -41,24 +41,4 @@ public class Pacman : MonoBehaviour
         transform.rotation = Quaternion.AngleAxis(angle * Mathf.Rad2Deg, Vector3.forward);
     }
 
-    public void ResetState()
-    {
-        enabled = true;
-        spriteRenderer.enabled = true;
-        circleCollider.enabled = true;
-        deathSequence.enabled = false;
-        movement.ResetState();
-        gameObject.SetActive(true);
-    }
-
-    public void DeathSequence()
-    {
-        enabled = false;
-        spriteRenderer.enabled = false;
-        circleCollider.enabled = false;
-        movement.enabled = false;
-        deathSequence.enabled = true;
-        deathSequence.Restart();
-    }
-
 }

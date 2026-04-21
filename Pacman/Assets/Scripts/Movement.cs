@@ -87,7 +87,7 @@ public class Movement : MonoBehaviour
 
         // Slightly larger and more reliable box
         Vector2 origin = rb.position + direction * 0.4f;
-        Vector2 size = Vector2.one * 0.7f;
+        Vector2 size = Vector2.one * distance;
 
         RaycastHit2D hit = Physics2D.BoxCast(origin, size, 0f, direction, 0.1f, obstacleLayer);
 
