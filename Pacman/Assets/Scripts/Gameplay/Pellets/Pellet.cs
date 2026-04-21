@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Pellet : MonoBehaviour
 {
-    public int pointValue = 10;
+    public int points = 10;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -11,7 +11,7 @@ public class Pellet : MonoBehaviour
             testMove player = other.GetComponent<testMove>();
             if (player == null) return;
 
-            player.AddScore(pointValue);
+            player.AddScore(points);
             GameManager.Instance.OnPelletEaten();
             gameObject.SetActive(false);
         }

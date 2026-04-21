@@ -244,6 +244,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 61705374}
   m_CullTransparentMesh: 1
+--- !u!114 &92151781 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2111930571577938837, guid: b7e6d8b854419774a91978cc96523382, type: 3}
+  m_PrefabInstance: {fileID: 8393070688411558868}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b082d53867f26fb469cd4f0903db0ae8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &215397520
 GameObject:
   m_ObjectHideFlags: 0
@@ -701,6 +712,9 @@ MonoBehaviour:
     m_Bits: 136
   gridOffset: {x: 0.5, y: 0.5}
   turnTolerance: 0.06
+  canWarp: 1
+  leftBoundary: -10
+  rightBoundary: 10
   currentDirection: {x: 0, y: 0}
   powerUpDuration: 8
   deathSequence: {fileID: 0}
@@ -900,6 +914,17 @@ Transform:
   - {fileID: 525107208}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &452575575 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 670879921496644118, guid: 100663d6611600844ae886512efad7af, type: 3}
+  m_PrefabInstance: {fileID: 6972792586659254970}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b082d53867f26fb469cd4f0903db0ae8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &515653124
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,8 +961,17 @@ MonoBehaviour:
   startingLives: 3
   powerPelletPrefab: {fileID: 2845381662289636116, guid: 04d744db389a70541a9064ae9b053647, type: 3}
   bonusPelletSpawnPoints: []
-  levelScenePrefix: 'Level '
+  gameSceneName: Level 0
   upgradeSceneName: UpgradeScene
+  ghosts:
+  - {fileID: 92151781}
+  - {fileID: 1555142511}
+  - {fileID: 1249570407}
+  - {fileID: 452575575}
+  pellets: {fileID: 0}
+  gameOverText: {fileID: 0}
+  scoreText: {fileID: 0}
+  livesText: {fileID: 0}
 --- !u!4 &515653126
 Transform:
   m_ObjectHideFlags: 0
@@ -3875,6 +3909,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 979819894}
   m_CullTransparentMesh: 1
+--- !u!114 &1249570407 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9218472705417061968, guid: 43f59062d74c0ba4790ba98395ea8499, type: 3}
+  m_PrefabInstance: {fileID: 4621638548050398573}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b082d53867f26fb469cd4f0903db0ae8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1453892678
 GameObject:
   m_ObjectHideFlags: 0
@@ -3967,6 +4012,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1555142511 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7844293428593045443, guid: ebd7c8f994b02d24a8a2f6f8fd2293f0, type: 3}
+  m_PrefabInstance: {fileID: 3878642429671459296}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b082d53867f26fb469cd4f0903db0ae8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1939598396
 GameObject:
   m_ObjectHideFlags: 0
@@ -4000,8 +4056,9 @@ MonoBehaviour:
   livesText: {fileID: 0}
   winPanel: {fileID: 2010174791}
   losePanel: {fileID: 841235047}
+  loseMenuButton: {fileID: 0}
   timerText: {fileID: 0}
-  nextLevelButton: {fileID: 0}
+  mainMenuSceneName: MainMenu
 --- !u!4 &1939598398
 Transform:
   m_ObjectHideFlags: 0
@@ -4462,6 +4519,10 @@ PrefabInstance:
       propertyPath: initialDirection.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7844293428593045443, guid: ebd7c8f994b02d24a8a2f6f8fd2293f0, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 255657196}
     - target: {fileID: 8595093873975357755, guid: ebd7c8f994b02d24a8a2f6f8fd2293f0, type: 3}
       propertyPath: duration
       value: 2
@@ -4598,6 +4659,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 9218472705417061968, guid: 43f59062d74c0ba4790ba98395ea8499, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 255657196}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4614,6 +4679,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 670879921496644118, guid: 100663d6611600844ae886512efad7af, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 255657196}
     - target: {fileID: 1356743072702530798, guid: 100663d6611600844ae886512efad7af, type: 3}
       propertyPath: duration
       value: 16
@@ -4760,7 +4829,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3833181070060514443, guid: b7e6d8b854419774a91978cc96523382, type: 3}
       propertyPath: m_IsTrigger
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6035815188219197576, guid: b7e6d8b854419774a91978cc96523382, type: 3}
       propertyPath: duration
@@ -4842,8 +4911,8 @@ SceneRoots:
   m_Roots:
   - {fileID: 449806858}
   - {fileID: 8393070688411558868}
-  - {fileID: 4621638548050398573}
   - {fileID: 3878642429671459296}
+  - {fileID: 4621638548050398573}
   - {fileID: 6972792586659254970}
   - {fileID: 1453892681}
   - {fileID: 2009048967}

@@ -246,9 +246,48 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    // Fixed: avoid compile error when GameManager doesn't expose 'levelScenePrefix'.
+    // Prefer using an explicit prefix string; if GameManager exposes a 'gameSceneName'
+    // we derive a prefix from it (text up to last space). Otherwise fallback to "Level "
     private bool IsGameplayScene(string sceneName)
     {
-        string levelPrefix = GameManager.Instance != null ? GameManager.Instance.levelScenePrefix : "Level ";
-        return !string.IsNullOrEmpty(sceneName) && sceneName.StartsWith(levelPrefix);
+        if (string.IsNullOrEmpty(sceneName))
+            return false;
+
+        string levelPrefix = "Level ";
+
+        if (GameManager.Instance != null)
+        {
+            // Try to use public property 'levelScenePrefix' if it exists (reflectively).
+            var gmType = GameManager.Instance.GetType();
+            var field = gmType.GetField("levelScenePrefix");
+            if (field != null)
+            {
+                var val = field.GetValue(GameManager.Instance) as string;
+                if (!string.IsNullOrEmpty(val))
+                {
+                    levelPrefix = val;
+                }
+            }
+            else
+            {
+                // Fallback: use gameSceneName (e.g. "Level 0") and take prefix up to last space
+                var prop = gmType.GetProperty("gameSceneName");
+                if (prop != null)
+                {
+                    var gs = prop.GetValue(GameManager.Instance) as string;
+                    if (!string.IsNullOrEmpty(gs))
+                    {
+                        int lastSpace = gs.LastIndexOf(' ');
+                        if (lastSpace >= 0)
+                            levelPrefix = gs.Substring(0, lastSpace + 1);
+                        else
+                            levelPrefix = gs;
+                    }
+                }
+            }
+        }
+
+        return sceneName.StartsWith(levelPrefix);
     }
 }
