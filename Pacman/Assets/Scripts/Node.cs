@@ -28,5 +28,4 @@ public class Node : MonoBehaviour
             availableDirections.Add(direction);
         }
     }
-
 }

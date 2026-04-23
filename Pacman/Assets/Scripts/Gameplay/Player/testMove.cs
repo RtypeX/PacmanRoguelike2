@@ -392,9 +392,18 @@ public class testMove : MonoBehaviour
                 }
                 else if (!ghost.IsEaten)
                 {
+                    foreach (Ghost g in FindObjectsOfType<Ghost>())
+                    {
+                        Movement m = g.GetComponent<Movement>();
+                        if (m != null)
+                        {
+                            m.Stop();
+                        }
+                    }
+
                     animator.SetTrigger(AnimDeath);
                     AudioManager.Instance?.PlayDeath();
-                    TakeHit();
+                    GameManager.Instance?.PacmanEaten();
                 }
                 break;
         }

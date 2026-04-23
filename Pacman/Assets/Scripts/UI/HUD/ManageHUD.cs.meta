@@ -3,7 +3,13 @@ guid: 9658bae09e628544cb0b3a45a19af5cf
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - scoreText: {instanceID: 0}
+  - livesText: {instanceID: 0}
+  - winPanel: {instanceID: 0}
+  - losePanel: {instanceID: 0}
+  - loseMenuButton: {instanceID: 0}
+  - timerText: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

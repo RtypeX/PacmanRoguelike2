@@ -7,6 +7,11 @@ public class Movement : MonoBehaviour
     public float speedMultiplier = 1f;
     public Vector2 initialDirection;
 
+    [Header("Grid")]
+    public float tileSize = 1f;
+    public Vector2 gridOffset = new Vector2(0.5f, 0.5f);
+    public float turnTolerance = 0.08f;
+
     [Header("Collision")]
     public LayerMask obstacleLayer; // MUST be set to Wall in Inspector
 
@@ -34,6 +39,7 @@ public class Movement : MonoBehaviour
         transform.position = startingPosition;
 
         rb.isKinematic = false;
+        rb.bodyType = RigidbodyType2D.Dynamic;
         rb.freezeRotation = true;
 
         enabled = true;
@@ -47,25 +53,65 @@ public class Movement : MonoBehaviour
             SetDirection(nextDirection);
         }
     }
+    private Vector2 WorldToCellCenter(Vector2 pos)
+    {
+        float x = Mathf.Round((pos.x - gridOffset.x) / tileSize) * tileSize + gridOffset.x;
+        float y = Mathf.Round((pos.y - gridOffset.y) / tileSize) * tileSize + gridOffset.y;
+        return new Vector2(x, y);
+    }
+
+    private bool IsAtCellCenter(Vector2 pos)
+    {
+        Vector2 center = WorldToCellCenter(pos);
+        return Vector2.Distance(pos, center) <= GetCenterSnapTolerance();
+    }
+
+    private float GetCenterSnapTolerance()
+    {
+        return Mathf.Max(turnTolerance, speed * speedMultiplier * Time.fixedDeltaTime * 0.6f);
+    }
 
     private void FixedUpdate()
     {
-        // Try to apply queued direction again in physics step
-        if (nextDirection != Vector2.zero)
+        Vector2 pos = rb.position;
+        if (IsAtCellCenter(pos))
         {
-            SetDirection(nextDirection);
+            // Snap EXACTLY like Pac-Man
+            pos = WorldToCellCenter(pos);
+            rb.position = pos;
+
+            // Try queued direction
+            if (nextDirection != Vector2.zero && !Occupied(nextDirection))
+            {
+                direction = nextDirection;
+                nextDirection = Vector2.zero;
+            }
+
+            // Stop if blocked
+            if (Occupied(direction))
+            {
+                return;
+            }
         }
 
-        // STOP if wall ahead
-        if (Occupied(direction))
-        {
-            return;
-        }
-
-        Vector2 position = rb.position;
+        // Move normally
         Vector2 translation = speed * speedMultiplier * Time.fixedDeltaTime * direction;
+        rb.MovePosition(rb.position + translation);
 
-        rb.MovePosition(position + translation);
+    }
+
+    public void Stop()
+    {
+        direction = Vector2.zero;
+        nextDirection = Vector2.zero;
+
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.isKinematic = true; // freezes movement completely
+        }
+
+        enabled = false; // stops FixedUpdate from running
     }
 
     public void SetDirection(Vector2 direction, bool forced = false)
@@ -86,7 +132,7 @@ public class Movement : MonoBehaviour
         float distance = 0.6f;
 
         // Slightly larger and more reliable box
-        Vector2 origin = rb.position + direction * 0.4f;
+        Vector2 origin = rb.position + direction * 0.27f;
         Vector2 size = Vector2.one * distance;
 
         RaycastHit2D hit = Physics2D.BoxCast(origin, size, 0f, direction, 0.1f, obstacleLayer);
