@@ -101,7 +101,9 @@ public class UpgradeScreenManager : MonoBehaviour
 
         if (levelText != null)
         {
-            int level = GameManager.Instance != null ? GameManager.Instance.CurrentLevel - 1 : 0;
+            int level = 0;
+            if (GameManager.Instance != null && GameManager.Instance.HasCompletedLevel)
+                level = Mathf.Max(1, GameManager.Instance.CurrentLevel - 1);
             levelText.text = level > 0 ? "LEVEL " + level + " COMPLETE" : "NO LEVEL COMPLETED YET";
         }
 

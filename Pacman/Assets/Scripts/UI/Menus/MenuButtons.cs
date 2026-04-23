@@ -35,10 +35,10 @@ public class MenuButtons : MonoBehaviour
 
             if (cachedGameManager != null)
             {
-                // LOGIC CHANGE: 
-                // If the player is on Level 1, it's a "New Game" (Reset).
-                // If CurrentLevel is 2 or higher, they are returning from the shop (Don't Reset).
-                if (cachedGameManager.CurrentLevel == 1)
+                bool shouldResumeRun = cachedGameManager.HasCompletedLevel;
+                Debug.Log($"MenuButtons.Start pressed with CurrentLevel={cachedGameManager.CurrentLevel}, HasCompletedLevel={cachedGameManager.HasCompletedLevel}, shouldResumeRun={shouldResumeRun}");
+
+                if (!shouldResumeRun)
                 {
                     cachedGameManager.StartGame();
                 }
@@ -64,9 +64,10 @@ public class MenuButtons : MonoBehaviour
     private void TryOpenUpgrades()
     {
         cachedGameManager = GetOrCreateGameManager();
-        bool hasPlayedLevel = cachedGameManager == null || cachedGameManager.CurrentLevel > 1;
+        bool hasCompletedLevel = cachedGameManager != null && cachedGameManager.HasCompletedLevel;
+        Debug.Log($"MenuButtons.TryOpenUpgrades hasCompletedLevel={hasCompletedLevel}, currentLevel={(cachedGameManager != null ? cachedGameManager.CurrentLevel : -1)}");
 
-        if (!hasPlayedLevel)
+        if (!hasCompletedLevel)
         {
             StartCoroutine(ShowNotification());
             return;
@@ -80,12 +81,13 @@ public class MenuButtons : MonoBehaviour
         if (upgradesButton == null) return;
 
         cachedGameManager = GetOrCreateGameManager();
-        bool hasPlayedLevel = cachedGameManager == null || cachedGameManager.CurrentLevel > 1;
+        bool hasCompletedLevel = cachedGameManager != null && cachedGameManager.HasCompletedLevel;
+        Debug.Log($"MenuButtons.RefreshUpgradeButton hasCompletedLevel={hasCompletedLevel}, currentLevel={(cachedGameManager != null ? cachedGameManager.CurrentLevel : -1)}");
 
         // Grey out the button visually if locked
         ColorBlock colors = upgradesButton.colors;
-        colors.normalColor = hasPlayedLevel ? Color.white : new Color(0.4f, 0.4f, 0.4f, 1f);
-        colors.highlightedColor = hasPlayedLevel ? new Color(0.9f, 0.9f, 0.9f, 1f) : new Color(0.4f, 0.4f, 0.4f, 1f);
+        colors.normalColor = hasCompletedLevel ? Color.white : new Color(0.4f, 0.4f, 0.4f, 1f);
+        colors.highlightedColor = hasCompletedLevel ? new Color(0.9f, 0.9f, 0.9f, 1f) : new Color(0.4f, 0.4f, 0.4f, 1f);
         upgradesButton.colors = colors;
     }
 

@@ -1,5 +1,6 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.SocialPlatforms.Impl;
@@ -31,7 +32,7 @@ public class GameManager : MonoBehaviour
     }
 
     [Header("Testing")]
-    public int testStartLevel = 2;
+    public int testStartLevel = 0;
     public int testStartPoints = 0;
     public int testStartFruit = 0;
 
@@ -49,6 +50,7 @@ public class GameManager : MonoBehaviour
 
     public int CurrentLevel { get; private set; } = 1;
     public float CurrentTimerDuration { get; private set; }
+    public bool HasCompletedLevel { get; private set; } = false;
 
     // runtime state
     private float timerRemaining;
@@ -84,8 +86,10 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         EnsureCoreManagers();
 
-        CurrentLevel = testStartLevel;
+        CurrentLevel = Mathf.Max(1, testStartLevel + 1);
         CurrentTimerDuration = startingTimerDuration;
+        HasCompletedLevel = testStartLevel > 0;
+        Debug.Log($"GameManager.Awake initialized CurrentLevel={CurrentLevel}, HasCompletedLevel={HasCompletedLevel}, testStartLevel={testStartLevel}.");
 
         if (testStartPoints > 0 || testStartFruit > 0)
             StartCoroutine(AddTestCurrencies());
@@ -93,7 +97,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        if (SceneManager.GetActiveScene().name == gameSceneName)
+        if (IsGameplayScene(SceneManager.GetActiveScene().name))
             InitLevel();
     }
 
@@ -117,6 +121,7 @@ public class GameManager : MonoBehaviour
 
         CurrentLevel = 1;
         CurrentTimerDuration = startingTimerDuration;
+        HasCompletedLevel = false;
         fruitUnlocked = false;
         bonusPowerPelletCount = 0;
         ghostFreezeDuration = 0f;
@@ -126,7 +131,9 @@ public class GameManager : MonoBehaviour
         ghostMultiplier = 1;
         lives = startingLives;
 
-        SceneManager.LoadScene(gameSceneName);
+        string sceneToLoad = GetSceneNameForLevel(CurrentLevel);
+        Debug.Log($"GameManager.StartGame starting new run at CurrentLevel={CurrentLevel}, loading '{sceneToLoad}'.");
+        SceneManager.LoadScene(sceneToLoad);
     }
 
     // --- CALL THIS FROM THE MAIN MENU IF THEY JUST CAME FROM THE SHOP ---
@@ -138,12 +145,14 @@ public class GameManager : MonoBehaviour
         timerRunning = false;
 
         Time.timeScale = 1f;
-        SceneManager.LoadScene(gameSceneName);
+        string sceneToLoad = GetSceneNameForLevel(CurrentLevel);
+        Debug.Log($"GameManager.LoadLevelFromMenu resuming with CurrentLevel={CurrentLevel}, HasCompletedLevel={HasCompletedLevel}, loading '{sceneToLoad}'.");
+        SceneManager.LoadScene(sceneToLoad);
     }
 
     private void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name != gameSceneName) return;
+        if (!IsGameplayScene(scene.name)) return;
         InitLevel();
     }
 
@@ -215,6 +224,8 @@ public class GameManager : MonoBehaviour
     private void WinLevel()
     {
         levelInitialized = false; // Prevent double triggers
+        HasCompletedLevel = true;
+        Debug.Log($"GameManager.WinLevel marked HasCompletedLevel={HasCompletedLevel} at CurrentLevel={CurrentLevel}.");
         StopTimer();
         ManageHUD.Instance?.ShowWinScreen();
         Time.timeScale = 0f;
@@ -326,6 +337,29 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         CurrentLevel++;
+        Debug.Log($"GameManager.ProceedToUpgrades incremented CurrentLevel to {CurrentLevel} before loading '{upgradeSceneName}'.");
+        GoToUpgradeScreen();
+    }
+
+    public void LoadNextLevel()
+    {
+        Time.timeScale = 1f;
+        StopTimer();
+
+        string activeSceneName = SceneManager.GetActiveScene().name;
+        int currentSceneNumber = GetSceneNumberFromName(activeSceneName);
+        int nextSceneNumber = currentSceneNumber >= 0 ? currentSceneNumber + 1 : Mathf.Max(1, CurrentLevel);
+        string nextSceneName = $"Level {nextSceneNumber}";
+
+        if (SceneExistsInBuildSettings(nextSceneName))
+        {
+            CurrentLevel = nextSceneNumber + 1;
+            Debug.Log($"GameManager.LoadNextLevel advancing from '{activeSceneName}' to '{nextSceneName}' with CurrentLevel={CurrentLevel}.");
+            SceneManager.LoadScene(nextSceneName);
+            return;
+        }
+
+        Debug.LogWarning($"GameManager.LoadNextLevel could not find '{nextSceneName}'. Staying on current progression state and opening upgrades instead.");
         GoToUpgradeScreen();
     }
 
@@ -333,7 +367,7 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         StopTimer();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SceneManager.LoadScene(GetSceneNameForLevel(CurrentLevel));
     }
 
     public void GoToUpgradeScreen()
@@ -360,7 +394,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ---------------------------
-    // Methods merged/added from provided script � non-destructive additions
+    // Methods merged/added from provided script — non-destructive additions
     // ---------------------------
 
     // Classic-style: set the score and update optional UI text
@@ -515,6 +549,17 @@ public class GameManager : MonoBehaviour
     public void UnlockFruit() => fruitUnlocked = true;
     public void UpgradePowerPelletCount(int count) => bonusPowerPelletCount += count;
     public void UpgradeGhostFreeze(float duration) => ghostFreezeDuration += duration;
+    public void DebugMarkLevelCompleted()
+    {
+        HasCompletedLevel = true;
+        Debug.Log($"GameManager.DebugMarkLevelCompleted set HasCompletedLevel={HasCompletedLevel} at CurrentLevel={CurrentLevel}.");
+    }
+
+    public void DebugSetCurrentLevel(int level)
+    {
+        CurrentLevel = Mathf.Max(1, level);
+        Debug.Log($"GameManager.DebugSetCurrentLevel set CurrentLevel={CurrentLevel}.");
+    }
 
     private void EnsureCoreManagers()
     {
@@ -530,4 +575,47 @@ public class GameManager : MonoBehaviour
             Debug.Log("GameManager.EnsureCoreManagers created PlayerUpgrades.");
         }
     }
+
+    private bool IsGameplayScene(string sceneName)
+    {
+        return !string.IsNullOrWhiteSpace(sceneName) &&
+               (sceneName == gameSceneName || sceneName.StartsWith("Level "));
+    }
+
+    private string GetSceneNameForLevel(int level)
+    {
+        int sceneNumber = Mathf.Max(0, level - 1);
+        string numberedSceneName = $"Level {sceneNumber}";
+
+        if (SceneExistsInBuildSettings(numberedSceneName))
+            return numberedSceneName;
+
+        return gameSceneName;
+    }
+
+    private bool SceneExistsInBuildSettings(string sceneName)
+    {
+        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        {
+            string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
+            if (string.IsNullOrWhiteSpace(scenePath))
+                continue;
+
+            string buildSceneName = Path.GetFileNameWithoutExtension(scenePath);
+            if (buildSceneName == sceneName)
+                return true;
+        }
+
+        return false;
+    }
+
+    private int GetSceneNumberFromName(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName) || !sceneName.StartsWith("Level "))
+            return -1;
+
+        string suffix = sceneName.Substring("Level ".Length);
+        return int.TryParse(suffix, out int sceneNumber) ? sceneNumber : -1;
+    }
 }
+

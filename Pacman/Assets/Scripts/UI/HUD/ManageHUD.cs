@@ -107,16 +107,34 @@ public class ManageHUD : MonoBehaviour
             winPanel.SetActive(true);
             Time.timeScale = 0f;
 
-            // Automatically find and link the upgrade button
-            Button upgradeBtn = winPanel.GetComponentInChildren<Button>();
-            if (upgradeBtn != null)
+            Button continueButton = GetWinPanelButton("NextLevel");
+            if (continueButton == null)
+                continueButton = winPanel.GetComponentInChildren<Button>(true);
+
+            if (continueButton != null)
             {
-                upgradeBtn.onClick.RemoveAllListeners();
-                upgradeBtn.onClick.AddListener(() => {
+                continueButton.onClick.RemoveAllListeners();
+                continueButton.onClick.AddListener(() =>
+                {
                     GameManager.Instance.ProceedToUpgrades();
                 });
             }
         }
+    }
+
+    private Button GetWinPanelButton(string buttonName)
+    {
+        if (winPanel == null)
+            return null;
+
+        Button[] buttons = winPanel.GetComponentsInChildren<Button>(true);
+        foreach (Button button in buttons)
+        {
+            if (button != null && button.name == buttonName)
+                return button;
+        }
+
+        return null;
     }
 
     public void ShowScorePopup(int amount, Vector3 worldPosition) { }
