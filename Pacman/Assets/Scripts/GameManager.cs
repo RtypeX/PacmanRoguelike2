@@ -9,6 +9,9 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+    private static bool sessionStateInitialized = false;
+    private static int sessionCurrentLevel = 1;
+    private static bool sessionHasCompletedLevel = false;
 
     public static GameManager EnsureInstance()
     {
@@ -86,10 +89,21 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         EnsureCoreManagers();
 
-        CurrentLevel = Mathf.Max(1, testStartLevel + 1);
         CurrentTimerDuration = startingTimerDuration;
-        HasCompletedLevel = testStartLevel > 0;
-        Debug.Log($"GameManager.Awake initialized CurrentLevel={CurrentLevel}, HasCompletedLevel={HasCompletedLevel}, testStartLevel={testStartLevel}.");
+
+        if (sessionStateInitialized)
+        {
+            CurrentLevel = sessionCurrentLevel;
+            HasCompletedLevel = sessionHasCompletedLevel;
+            Debug.Log($"GameManager.Awake restored session state CurrentLevel={CurrentLevel}, HasCompletedLevel={HasCompletedLevel}.");
+        }
+        else
+        {
+            CurrentLevel = Mathf.Max(1, testStartLevel + 1);
+            HasCompletedLevel = testStartLevel > 0;
+            SyncSessionState();
+            Debug.Log($"GameManager.Awake initialized CurrentLevel={CurrentLevel}, HasCompletedLevel={HasCompletedLevel}, testStartLevel={testStartLevel}.");
+        }
 
         if (testStartPoints > 0 || testStartFruit > 0)
             StartCoroutine(AddTestCurrencies());
@@ -125,6 +139,7 @@ public class GameManager : MonoBehaviour
         fruitUnlocked = false;
         bonusPowerPelletCount = 0;
         ghostFreezeDuration = 0f;
+        SyncSessionState();
 
         // reset classic-game-like fields
         score = 0;
@@ -225,6 +240,7 @@ public class GameManager : MonoBehaviour
     {
         levelInitialized = false; // Prevent double triggers
         HasCompletedLevel = true;
+        SyncSessionState();
         Debug.Log($"GameManager.WinLevel marked HasCompletedLevel={HasCompletedLevel} at CurrentLevel={CurrentLevel}.");
         StopTimer();
         ManageHUD.Instance?.ShowWinScreen();
@@ -337,6 +353,8 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         CurrentLevel++;
+        HasCompletedLevel = true;
+        SyncSessionState();
         Debug.Log($"GameManager.ProceedToUpgrades incremented CurrentLevel to {CurrentLevel} before loading '{upgradeSceneName}'.");
         GoToUpgradeScreen();
     }
@@ -354,6 +372,8 @@ public class GameManager : MonoBehaviour
         if (SceneExistsInBuildSettings(nextSceneName))
         {
             CurrentLevel = nextSceneNumber + 1;
+            HasCompletedLevel = true;
+            SyncSessionState();
             Debug.Log($"GameManager.LoadNextLevel advancing from '{activeSceneName}' to '{nextSceneName}' with CurrentLevel={CurrentLevel}.");
             SceneManager.LoadScene(nextSceneName);
             return;
@@ -552,12 +572,14 @@ public class GameManager : MonoBehaviour
     public void DebugMarkLevelCompleted()
     {
         HasCompletedLevel = true;
+        SyncSessionState();
         Debug.Log($"GameManager.DebugMarkLevelCompleted set HasCompletedLevel={HasCompletedLevel} at CurrentLevel={CurrentLevel}.");
     }
 
     public void DebugSetCurrentLevel(int level)
     {
         CurrentLevel = Mathf.Max(1, level);
+        SyncSessionState();
         Debug.Log($"GameManager.DebugSetCurrentLevel set CurrentLevel={CurrentLevel}.");
     }
 
@@ -616,6 +638,13 @@ public class GameManager : MonoBehaviour
 
         string suffix = sceneName.Substring("Level ".Length);
         return int.TryParse(suffix, out int sceneNumber) ? sceneNumber : -1;
+    }
+
+    private void SyncSessionState()
+    {
+        sessionStateInitialized = true;
+        sessionCurrentLevel = CurrentLevel;
+        sessionHasCompletedLevel = HasCompletedLevel;
     }
 }
 
